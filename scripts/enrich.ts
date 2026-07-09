@@ -53,7 +53,11 @@ async function main() {
         unmatched++;
         console.log(`  ✗ no match: ${v.name}`);
       } else {
-        const { error: upErr } = await sb.from("venues").update(fields).eq("id", v.id);
+        // Don't clobber an existing photo (e.g. the video-thumbnail fallback)
+        // when Google has no photo for this place.
+        const patch: Record<string, unknown> = { ...fields };
+        if (patch.google_photo_url == null) delete patch.google_photo_url;
+        const { error: upErr } = await sb.from("venues").update(patch).eq("id", v.id);
         if (upErr) throw upErr;
         matched++;
         console.log(`  ✓ ${v.name}`);
