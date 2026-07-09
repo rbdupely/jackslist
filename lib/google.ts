@@ -1,9 +1,9 @@
-// SERVER-ONLY Google Places helpers. Uses the legacy Places API (Text Search +
-// Details) with a single server-side key. Photos are served through our own
-// /api/place-photo route so the key is never exposed to the browser.
+// SERVER-ONLY Google Places helpers. Uses the Places API (New) — a single
+// Text Search call returns all the fields we need. Photos are served through
+// our own /api/place-photo route so the key is never exposed to the browser.
 import type { Venue } from "@/lib/types";
 
-const BASE = "https://maps.googleapis.com/maps/api/place";
+const BASE = "https://places.googleapis.com/v1";
 
 export type EnrichmentFields = {
   google_place_id: string | null;
@@ -23,76 +23,76 @@ function key(): string {
   return k;
 }
 
-async function textSearch(query: string): Promise<string | null> {
-  const url = `${BASE}/textsearch/json?query=${encodeURIComponent(query)}&key=${key()}`;
-  const res = await fetch(url);
-  const json = (await res.json()) as {
-    status: string;
-    results?: { place_id: string }[];
-  };
-  if (json.status !== "OK" || !json.results?.length) return null;
-  return json.results[0].place_id;
-}
-
-type Details = {
-  place_id?: string;
-  formatted_address?: string;
-  geometry?: { location?: { lat: number; lng: number } };
+type NewPlace = {
+  id?: string;
+  formattedAddress?: string;
+  location?: { latitude: number; longitude: number };
   rating?: number;
-  url?: string;
-  photos?: { photo_reference: string }[];
-  opening_hours?: { weekday_text?: string[] };
+  googleMapsUri?: string;
+  photos?: { name: string }[];
+  regularOpeningHours?: { weekdayDescriptions?: string[] };
 };
 
-async function placeDetails(placeId: string): Promise<Details | null> {
-  const fields = [
-    "place_id",
-    "formatted_address",
-    "geometry/location",
-    "rating",
-    "url",
-    "photos",
-    "opening_hours",
-  ].join(",");
-  const url = `${BASE}/details/json?place_id=${placeId}&fields=${fields}&key=${key()}`;
-  const res = await fetch(url);
-  const json = (await res.json()) as { status: string; result?: Details };
-  if (json.status !== "OK" || !json.result) return null;
-  return json.result;
+// One Text Search call, returning the full set of place fields.
+async function searchPlace(query: string): Promise<NewPlace | null> {
+  const res = await fetch(`${BASE}/places:searchText`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": key(),
+      "X-Goog-FieldMask": [
+        "places.id",
+        "places.formattedAddress",
+        "places.location",
+        "places.rating",
+        "places.googleMapsUri",
+        "places.photos",
+        "places.regularOpeningHours.weekdayDescriptions",
+      ].join(","),
+    },
+    body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
+  });
+  const json = (await res.json()) as { places?: NewPlace[]; error?: { message?: string } };
+  if (!res.ok || json.error) {
+    // Surface real API errors (e.g. API not enabled, key restricted) instead of
+    // silently reporting "no match".
+    throw new Error(json.error?.message ?? `Places API HTTP ${res.status}`);
+  }
+  return json.places?.[0] ?? null;
 }
 
 // Look a venue up on Google and return the fields to persist, or null if no
-// confident match was found.
+// match was found.
 export async function fetchEnrichment(
   venue: Pick<Venue, "name" | "city" | "country">,
   nowIso: string,
 ): Promise<EnrichmentFields | null> {
   const query = [venue.name, venue.city, venue.country].filter(Boolean).join(", ");
-  const placeId = await textSearch(query);
-  if (!placeId) return null;
+  const p = await searchPlace(query);
+  if (!p || !p.id) return null;
 
-  const d = await placeDetails(placeId);
-  if (!d) return null;
-
-  const photoRef = d.photos?.[0]?.photo_reference;
+  const photoName = p.photos?.[0]?.name;
   return {
-    google_place_id: d.place_id ?? placeId,
-    address: d.formatted_address ?? null,
-    lat: d.geometry?.location?.lat ?? null,
-    lng: d.geometry?.location?.lng ?? null,
-    google_rating: d.rating ?? null,
-    google_photo_url: photoRef ? `/api/place-photo?ref=${encodeURIComponent(photoRef)}` : null,
-    maps_url: d.url ?? null,
-    hours: d.opening_hours?.weekday_text ? { weekday_text: d.opening_hours.weekday_text } : null,
+    google_place_id: p.id,
+    address: p.formattedAddress ?? null,
+    lat: p.location?.latitude ?? null,
+    lng: p.location?.longitude ?? null,
+    google_rating: p.rating ?? null,
+    google_photo_url: photoName
+      ? `/api/place-photo?name=${encodeURIComponent(photoName)}`
+      : null,
+    maps_url: p.googleMapsUri ?? null,
+    hours: p.regularOpeningHours?.weekdayDescriptions
+      ? { weekday_text: p.regularOpeningHours.weekdayDescriptions }
+      : null,
     enriched_at: nowIso,
   };
 }
 
-// Fetch the raw photo bytes for a reference (used by the photo proxy route).
-export async function fetchPlacePhoto(
-  ref: string,
-  maxWidth = 800,
-): Promise<Response> {
-  const url = `${BASE}/photo?maxwidth=${maxWidth}&photo_reference=${encodeURIComponent(ref)}&key=${key()}`;
+// Fetch the raw photo bytes for a photo resource name (used by the photo proxy).
+// `name` looks like "places/XXX/photos/YYY". The media endpoint 302-redirects to
+// the actual image, which we follow.
+export async function fetchPlacePhoto(name: string, maxWidth = 800): Promise<Response> {
+  const url = `${BASE}/${name}/media?maxWidthPx=${maxWidth}&key=${key()}`;
   return fetch(url, { redirect: "follow" });
 }
