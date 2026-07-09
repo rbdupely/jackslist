@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx --version)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --use-npm --eslint --turbopack)",
+      "Bash(rm -rf /private/tmp/claude-501/-Users-ryanbutz-Documents-Claude-Projects-Jackslist/a999d696-b632-40f1-b153-f344874806b6/scratchpad/scaffold)",
+      "Bash(mkdir -p /private/tmp/claude-501/-Users-ryanbutz-Documents-Claude-Projects-Jackslist/a999d696-b632-40f1-b153-f344874806b6/scratchpad/scaffold)",
+      "Bash(npx --yes create-next-app@latest jackslist --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --use-npm --eslint --turbopack)",
+      "Bash(SCAF=\"/private/tmp/claude-501/-Users-ryanbutz-Documents-Claude-Projects-Jackslist/a999d696-b632-40f1-b153-f344874806b6/scratchpad/scaffold/jackslist\" *)",
+      "Bash(python3 -)",
+      "Bash(grep -E \"\\\\.\\(md|txt\\)$\")",
+      "Bash(npm install *)",
+      "Bash(node /tmp/_probe.ts)",
+      "Bash(node --experimental-strip-types /tmp/_probe.ts)",
+      "Bash(node --env-file=/tmp/_probe.env -e 'console.log\\(\"env\",process.env.HELLO\\)')",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npm run *)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__navigate",
+      "mcp__claude-in-chrome__computer",
+      "mcp__claude-in-chrome__javascript_tool",
+      "Bash(node --env-file=.env.local scripts/seed.ts)",
+      "Bash(git config *)",
+      "Read(//Users/ryanbutz/.config/**)",
+      "Bash(security find-internet-password *)",
+      "Bash(git add *)",
+      "Bash(grep -E 'raw/|\\\\.env\\\\.local$|\\\\.xlsx')",
+      "Bash(xargs -I{} du -k {})"
+    ]
+  }
+}

@@ -1,65 +1,109 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getAllVenues, getCities } from "@/lib/data";
+import { homeFeaturedLists, mostFeatured } from "@/lib/curate";
+import { SearchBar } from "@/components/SearchBar";
+import { CuratedListCard } from "@/components/CuratedListCard";
+import { VenueCard } from "@/components/VenueCard";
 
-export default function Home() {
+const EXAMPLES = [
+  "Best pizza in New York",
+  "Tokyo",
+  "Sandwiches in Florence",
+  "BBQ",
+  "Steakhouse in Las Vegas",
+];
+
+export default async function Home() {
+  const venues = await getAllVenues();
+  const lists = homeFeaturedLists(venues);
+  const featured = mostFeatured(venues, 8);
+  const cities = (await getCities()).slice(0, 16);
+  const venueCount = venues.length;
+  const cityCount = new Set(venues.map((v) => v.city).filter(Boolean)).size;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div>
+      {/* Hero */}
+      <section className="mx-auto max-w-4xl px-4 pb-10 pt-16 text-center sm:px-6 sm:pt-24">
+        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-flame">
+          A Yelp for one palate
+        </p>
+        <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
+          Where Jack says <br className="hidden sm:block" />
+          to eat.
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
+          Every place from <span className="font-medium text-ink">Jack&apos;s Dining Room</span> —
+          ranked, with his verdict and the dish to get. {venueCount} spots across {cityCount} cities.
+        </p>
+
+        <div className="mx-auto mt-8 max-w-2xl">
+          <SearchBar variant="hero" />
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          {EXAMPLES.map((ex) => (
+            <Link
+              key={ex}
+              href={`/search?q=${encodeURIComponent(ex)}`}
+              className="rounded-full border border-line bg-paper px-3.5 py-1.5 text-sm text-ink-soft transition hover:border-ink/30 hover:text-ink"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              {ex}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured lists */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="mb-6 flex items-end justify-between">
+          <h2 className="font-display text-3xl font-semibold text-ink">Jack&apos;s lists</h2>
+          <p className="hidden text-sm text-ink-soft sm:block">
+            Ranked by his score, then how often he goes back
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {lists.map((list) => (
+            <CuratedListCard key={list.title} list={list} />
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Most featured */}
+      {featured.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <div className="mb-6">
+            <h2 className="font-display text-3xl font-semibold text-ink">Most featured</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              The places Jack keeps coming back to.
+            </p>
+          </div>
+          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
+            {featured.map((v) => (
+              <div key={v.id} className="w-72 shrink-0 snap-start">
+                <VenueCard venue={v} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Cities */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Browse by city</h2>
+        <div className="flex flex-wrap gap-2.5">
+          {cities.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/city/${c.slug}`}
+              className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-medium text-ink transition hover:border-flame hover:text-flame"
+            >
+              {c.city}
+              <span className="ml-1.5 text-ink-soft">{c.count}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
