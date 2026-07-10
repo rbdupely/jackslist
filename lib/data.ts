@@ -279,14 +279,22 @@ export async function getCategoryStats(): Promise<CategoryStat[]> {
   const sb = await createClient();
   const cats = await getCategories();
 
-  const [{ data: items }, { data: critics }] = await Promise.all([
-    sb.from("items").select("category_id"),
+  // Per-category item totals via count queries — a plain .select() caps at 1000
+  // rows, which silently zeroed big/late categories (e.g. stocks).
+  const [itemCounts, { data: critics }] = await Promise.all([
+    Promise.all(
+      cats.map(async (c) => {
+        const { count } = await sb
+          .from("items")
+          .select("id", { count: "exact", head: true })
+          .eq("category_id", c.id);
+        return [c.id, count ?? 0] as const;
+      }),
+    ),
     sb.from("critics").select("category_id").eq("active", true),
   ]);
 
-  const itemBy = new Map<string, number>();
-  for (const r of (items as { category_id: string }[]) ?? [])
-    itemBy.set(r.category_id, (itemBy.get(r.category_id) ?? 0) + 1);
+  const itemBy = new Map<string, number>(itemCounts);
   const criticBy = new Map<string, number>();
   for (const r of (critics as { category_id: string }[]) ?? [])
     criticBy.set(r.category_id, (criticBy.get(r.category_id) ?? 0) + 1);
