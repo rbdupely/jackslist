@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   Category,
   Critic,
+  CriticRef,
   RequestRow,
   ScoredItem,
   TakeWithCritic,
@@ -273,4 +274,98 @@ export async function getFollowedCritics(): Promise<Critic[]> {
   const sb = await createClient();
   const { data } = await sb.from("critics").select("*").in("id", [...ids]);
   return (data as Critic[]) ?? [];
+}
+
+// ---- Home-page showcases (cross-category) ---------------------------------
+
+export type ItemWithCategory = ScoredItem & { categorySlug: string; categoryName: string };
+
+async function attachCategory(items: ScoredItem[]): Promise<ItemWithCategory[]> {
+  const cats = await getCategories();
+  const byId = new Map(cats.map((c) => [c.id, c]));
+  return items.map((i) => ({
+    ...i,
+    categorySlug: byId.get(i.category_id)?.slug ?? "food",
+    categoryName: byId.get(i.category_id)?.name ?? "",
+  }));
+}
+
+// Items multiple critics have independently covered — the heart of the pitch:
+// a pizza both Jack and Portnoy rated, a stock several investors disclosed.
+export async function getMostAgreedItems(limit = 8): Promise<ItemWithCategory[]> {
+  const sb = await createClient();
+  const { data } = await sb
+    .from("items_scored")
+    .select("*")
+    .gte("critic_count", 2)
+    .order("critic_count", { ascending: false })
+    .order("consensus_score", { ascending: false, nullsFirst: false })
+    .order("take_count", { ascending: false })
+    .limit(limit * 6);
+  const withCat = await attachCategory((data as ScoredItem[]) ?? []);
+
+  // Interleave across categories so the section shows the cross-category story
+  // (food consensus next to multi-investor stocks), not just the highest counts.
+  const byCat = new Map<string, ItemWithCategory[]>();
+  for (const i of withCat) {
+    const arr = byCat.get(i.categorySlug);
+    if (arr) arr.push(i);
+    else byCat.set(i.categorySlug, [i]);
+  }
+  const queues = [...byCat.values()];
+  const out: ItemWithCategory[] = [];
+  let idx = 0;
+  while (out.length < limit && queues.some((q) => q.length)) {
+    const q = queues[idx % queues.length];
+    if (q.length) out.push(q.shift()!);
+    idx++;
+  }
+  return out;
+}
+
+export type RecentTake = {
+  id: string;
+  stance: string | null;
+  score: number | null;
+  score_original: string | null;
+  published_on: string | null;
+  item: { slug: string; name: string; category_id: string };
+  critic: CriticRef;
+};
+
+// A lively "just in" feed across every category.
+export async function getRecentTakes(limit = 9): Promise<(RecentTake & { categorySlug: string })[]> {
+  const sb = await createClient();
+  const { data } = await sb
+    .from("takes")
+    .select(
+      `id, stance, score, score_original, published_on,
+       item:items(slug,name,category_id),
+       critic:critics(${CRITIC_FIELDS})`,
+    )
+    .order("published_on", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  const cats = await getCategories();
+  const byId = new Map(cats.map((c) => [c.id, c.slug]));
+  return ((data as unknown as RecentTake[]) ?? [])
+    .filter((t) => t.item && t.critic)
+    .map((t) => ({ ...t, categorySlug: byId.get(t.item.category_id) ?? "food" }));
+}
+
+export type OverviewStat = { critics: number; takes: number; items: number; liveCategories: number };
+
+export async function getOverview(): Promise<OverviewStat> {
+  const sb = await createClient();
+  const [c, t, i] = await Promise.all([
+    sb.from("critics").select("*", { count: "exact", head: true }).eq("active", true),
+    sb.from("takes").select("*", { count: "exact", head: true }),
+    sb.from("items").select("*", { count: "exact", head: true }),
+  ]);
+  const stats = await getCategoryStats();
+  return {
+    critics: c.count ?? 0,
+    takes: t.count ?? 0,
+    items: i.count ?? 0,
+    liveCategories: stats.filter((s) => s.criticCount > 0).length,
+  };
 }
