@@ -7,11 +7,11 @@
    ========================================================================= */
 @theme {
   /* Surfaces & ink (legacy names kept, revalued so existing classes cascade) */
-  --color-canvas: #f4f4f1; /* page background */
-  --color-cream: #f4f4f1; /* alias: also the "light text on dark" tone */
+  --color-canvas: #f7f4ee; /* page background — a touch warm for humanity */
+  --color-cream: #f7f4ee; /* alias: also the "light text on dark" tone */
   --color-surface: #ffffff;
   --color-paper: #ffffff; /* alias: cards */
-  --color-sunk: #ecece8; /* recessed wells */
+  --color-sunk: #efeae1; /* recessed wells */
   --color-ink: #17161a; /* primary text, near-black */
   --color-ink-soft: #6c6b73; /* secondary text */
   --color-muted: #6c6b73;
@@ -36,14 +36,14 @@
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
   --font-display: var(--font-display-face), "Bricolage Grotesque", var(--font-geist-sans), sans-serif;
 
-  /* Radii — deliberate, not everything-a-pill */
-  --radius-card: 0.875rem;
+  /* Radii — friendly but not everything-a-pill */
+  --radius-card: 1rem;
   --radius-chip: 0.5rem;
 
-  /* Elevation */
-  --shadow-e1: 0 1px 2px rgba(20, 19, 26, 0.06), 0 1px 1px rgba(20, 19, 26, 0.04);
-  --shadow-e2: 0 4px 14px rgba(20, 19, 26, 0.08), 0 1px 3px rgba(20, 19, 26, 0.05);
-  --shadow-e3: 0 12px 34px rgba(20, 19, 26, 0.12);
+  /* Elevation — warm-tinted for a softer, human feel */
+  --shadow-e1: 0 1px 2px rgba(60, 40, 20, 0.06), 0 1px 1px rgba(60, 40, 20, 0.04);
+  --shadow-e2: 0 6px 18px rgba(60, 40, 20, 0.08), 0 1px 3px rgba(60, 40, 20, 0.05);
+  --shadow-e3: 0 16px 40px rgba(60, 40, 20, 0.13);
 }
 
 html {

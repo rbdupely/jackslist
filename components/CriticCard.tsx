@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Critic } from "@/lib/types";
 import { FollowButton } from "@/components/FollowButton";
+import { CriticAvatar } from "@/components/CriticAvatar";
 import { catUI } from "@/lib/ui";
 
 export function CriticCard({
@@ -19,21 +19,12 @@ export function CriticCard({
   return (
     <div className="group flex items-center gap-3.5 rounded-card border border-line bg-surface p-3.5 shadow-e1 transition hover:border-line-strong hover:shadow-e2">
       <Link href={`/critic/${critic.slug}`} className="relative shrink-0">
-        {critic.avatar_url ? (
-          <Image
-            src={critic.avatar_url}
-            alt={critic.name}
-            width={52}
-            height={52}
-            className="h-[52px] w-[52px] rounded-full object-cover"
-          />
-        ) : (
-          <div
-            className={`grid h-[52px] w-[52px] place-items-center rounded-full ${ui.tint} font-display text-xl font-bold ${ui.text}`}
-          >
-            {critic.name.slice(0, 1)}
-          </div>
-        )}
+        <CriticAvatar
+          name={critic.name}
+          avatarUrl={critic.avatar_url}
+          categorySlug={categorySlug}
+          size={52}
+        />
         <span
           className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${ui.dot}`}
         />

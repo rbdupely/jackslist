@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "streetviewpixels-pa.googleapis.com" },
       { protocol: "https", hostname: "image.mux.com" }, // One Bite review thumbnails
       { protocol: "https", hostname: "media.onebite.app" },
+      { protocol: "https", hostname: "upload.wikimedia.org" }, // critic portraits (Wikimedia Commons)
+      { protocol: "https", hostname: "commons.wikimedia.org" },
+      { protocol: "https", hostname: "covers.openlibrary.org" }, // book covers
     ],
   },
   async redirects() {

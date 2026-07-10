@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import {
   getAllCritics,
   getCategoryStats,
@@ -11,6 +10,7 @@ import {
 import { SearchBar } from "@/components/SearchBar";
 import { CriticCard } from "@/components/CriticCard";
 import { AgreementCard } from "@/components/AgreementCard";
+import { CriticAvatar } from "@/components/CriticAvatar";
 import { catUI } from "@/lib/ui";
 
 const EXAMPLES = ["Best pizza in New York", "Alphabet", "Tokyo", "Apple", "Steakhouse in Las Vegas"];
@@ -49,17 +49,20 @@ export default async function Home() {
   const catBySlug = new Map(stats.map((s) => [s.id, s.slug]));
   const followed = critics.filter((c) => following.has(c.id));
 
+  // Faces first for the hero wall.
+  const wall = [...critics].sort((a, b) => (a.avatar_url ? 0 : 1) - (b.avatar_url ? 0 : 1));
+
   return (
     <div>
       {/* Hero */}
-      <section className="border-b border-line bg-surface">
+      <section className="relative overflow-hidden border-b border-line bg-gradient-to-b from-surface to-canvas">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <p className="overline mb-4 text-flame">Follow the critic, not the crowd</p>
-          <h1 className="font-display text-5xl font-extrabold tracking-tight text-ink sm:text-[4.25rem]">
+          <p className="overline mb-5 text-flame">Follow the critic, not the crowd</p>
+          <h1 className="font-display text-5xl font-extrabold tracking-tight text-ink sm:text-[4.5rem]">
             Taste has a name.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
-            The aggregator for people with taste. Real scores from named critics — food, stocks,
+            The aggregator for people with taste. Real scores from real critics — food, stocks,
             books and more — every one linked to its source.
           </p>
           <div className="mx-auto mt-8 max-w-2xl">
@@ -70,18 +73,34 @@ export default async function Home() {
               <Link
                 key={ex}
                 href={`/search?q=${encodeURIComponent(ex)}`}
-                className="rounded-chip border border-line bg-canvas px-3 py-1.5 text-sm text-muted transition hover:border-line-strong hover:text-ink"
+                className="rounded-chip border border-line bg-surface px-3 py-1.5 text-sm text-muted transition hover:border-line-strong hover:text-ink"
               >
                 {ex}
               </Link>
             ))}
           </div>
-          <div className="tnum mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm text-muted">
-            <span><span className="font-bold text-ink">{overview.critics}</span> critics</span>
-            <span className="text-line-strong">·</span>
-            <span><span className="font-bold text-ink">{overview.takes.toLocaleString()}</span> takes</span>
-            <span className="text-line-strong">·</span>
-            <span><span className="font-bold text-ink">{overview.items.toLocaleString()}</span> things rated</span>
+
+          {/* Critics wall — real faces make the brand human */}
+          <div className="mt-10 flex flex-col items-center gap-3">
+            <div className="flex -space-x-3">
+              {wall.slice(0, 10).map((c) => (
+                <Link key={c.id} href={`/critic/${c.slug}`} className="transition hover:-translate-y-1">
+                  <CriticAvatar
+                    name={c.name}
+                    avatarUrl={c.avatar_url}
+                    categorySlug={catBySlug.get(c.category_id) ?? "food"}
+                    size={48}
+                    ring
+                  />
+                </Link>
+              ))}
+            </div>
+            <p className="tnum text-sm text-muted">
+              <span className="font-bold text-ink">{overview.critics}</span> critics ·{" "}
+              <span className="font-bold text-ink">{overview.takes.toLocaleString()}</span> takes ·{" "}
+              <span className="font-bold text-ink">{overview.items.toLocaleString()}</span> rated —
+              zero algorithms
+            </p>
           </div>
         </div>
       </section>
@@ -146,28 +165,18 @@ export default async function Home() {
             <h2 className="mb-5 font-display text-2xl font-extrabold text-ink sm:text-3xl">Just in</h2>
             <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-e1">
               {recent.map((t) => {
-                const ui = catUI(t.categorySlug);
                 return (
                   <li key={t.id}>
                     <Link
                       href={`/${t.categorySlug}/${t.item.slug}`}
                       className="flex items-center gap-3 px-4 py-3 transition hover:bg-canvas"
                     >
-                      {t.critic.avatar_url ? (
-                        <Image
-                          src={t.critic.avatar_url}
-                          alt={t.critic.name}
-                          width={34}
-                          height={34}
-                          className="h-[34px] w-[34px] rounded-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full ${ui.tint} text-sm font-bold ${ui.text}`}
-                        >
-                          {t.critic.name.slice(0, 1)}
-                        </div>
-                      )}
+                      <CriticAvatar
+                        name={t.critic.name}
+                        avatarUrl={t.critic.avatar_url}
+                        categorySlug={t.categorySlug}
+                        size={34}
+                      />
                       <p className="min-w-0 flex-1 truncate text-sm text-ink">
                         <span className="font-semibold">{t.critic.name}</span>{" "}
                         <span className="text-muted">{stanceVerb(t)}</span>{" "}
