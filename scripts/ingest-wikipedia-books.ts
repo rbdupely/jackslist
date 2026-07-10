@@ -14,28 +14,71 @@ import { slugify } from "../lib/util.ts";
 
 const UA = "OnlyCritics/1.0 (ryan@dupely.io; contact ryan@dupely.io)";
 
-type Curator = { slug: string; name: string; page: string; bio: string };
+type Curator = {
+  slug: string;
+  name: string;
+  page: string;
+  bio: string;
+  platform: string; // "Book Club" | "Literary Prize"
+};
 
 const CURATORS: Curator[] = [
   {
     slug: "reeses-book-club",
     name: "Reese Witherspoon",
     page: "Reese's Book Club",
+    platform: "Book Club",
     bio: "Actor and founder of Reese's Book Club, which names one book a month — usually stories with women at the center.",
   },
   {
     slug: "oprahs-book-club",
     name: "Oprah Winfrey",
     page: "Oprah's Book Club",
+    platform: "Book Club",
     bio: "The most influential book endorsement in America. An Oprah's Book Club pick reliably becomes a bestseller.",
   },
   {
     slug: "read-with-jenna",
     name: "Jenna Bush Hager",
     page: "Jenna Bush Hager",
+    platform: "Book Club",
     bio: "Today show host whose Read with Jenna book club names a monthly pick that routinely tops bestseller lists.",
   },
+  {
+    slug: "pulitzer-fiction",
+    name: "The Pulitzer Prize for Fiction",
+    page: "Pulitzer Prize for Fiction",
+    platform: "Literary Prize",
+    bio: "American letters' most prestigious fiction award, given yearly since 1918 for distinguished fiction by an American author.",
+  },
+  {
+    slug: "booker-prize",
+    name: "The Booker Prize",
+    page: "Booker Prize",
+    platform: "Literary Prize",
+    bio: "The leading award for English-language literary fiction. A Booker win makes a novel — and its author's career.",
+  },
+  {
+    slug: "national-book-award-fiction",
+    name: "The National Book Award for Fiction",
+    page: "National Book Award for Fiction",
+    platform: "Literary Prize",
+    bio: "One of the US's premier literary honors, awarded annually since 1950.",
+  },
+  {
+    slug: "womens-prize-fiction",
+    name: "The Women's Prize for Fiction",
+    page: "Women's Prize for Fiction",
+    platform: "Literary Prize",
+    bio: "The UK's leading annual book award celebrating fiction written by women in English.",
+  },
 ];
+
+const JUNK_TITLES = new Set([
+  "novel", "fiction", "poetry", "drama", "history", "biography", "general nonfiction",
+  "biography or autobiography", "music", "special citations", "no award", "not awarded",
+  "general fiction", "nonfiction", "title", "work",
+]);
 
 const strip = (s: string) =>
   s
@@ -115,9 +158,10 @@ async function main() {
   let totalTakes = 0;
 
   for (const c of CURATORS) {
+   try {
     const { headers, rows } = await fetchTable(c.page);
     const di = colIndex(headers, "date", "month", "year");
-    const ti = colIndex(headers, "title", "book");
+    const ti = colIndex(headers, "title", "book", "work", "novel");
     const ai = colIndex(headers, "author");
     if (ti < 0) {
       console.log(`  ${c.name}: could not find a title column in [${headers}] — skipping`);
@@ -129,7 +173,7 @@ async function main() {
         slug: c.slug,
         name: c.name,
         category_id: categoryId,
-        platform: "Book Club",
+        platform: c.platform,
         source_url: `https://en.wikipedia.org/wiki/${encodeURIComponent(c.page.replace(/ /g, "_"))}`,
         bio: c.bio,
         score_style: "stance",
@@ -148,6 +192,8 @@ async function main() {
     for (const cells of rows) {
       const title = ti < cells.length ? cellMain(cells[ti]) : "";
       if (!title || title.length < 2) continue;
+      // Prize tables interleave genre subheader rows ("Novel", "Poetry"…) — skip them.
+      if (JUNK_TITLES.has(title.toLowerCase())) continue;
       const slug = slugify(title);
       if (!slug || seen.has(slug)) continue;
       seen.add(slug);
@@ -181,9 +227,10 @@ async function main() {
         item_id: itemId,
         verdict: null,
         score: null,
-        stance: "selected",
-        source_platform: "Book Club",
-        source_title: `${c.name}'s Book Club selection`,
+        stance: c.platform === "Literary Prize" ? "honored" : "selected",
+        source_platform: c.platform,
+        source_title:
+          c.platform === "Literary Prize" ? `${c.name} honoree` : `${c.name}'s Book Club selection`,
         source_url: `https://en.wikipedia.org/wiki/${encodeURIComponent(c.page.replace(/ /g, "_"))}`,
         published_on: iso,
       });
@@ -194,6 +241,9 @@ async function main() {
     console.log(`  ${c.name}: ${items} new books, ${takes} picks`);
     totalItems += items;
     totalTakes += takes;
+   } catch (e) {
+     console.log(`  ${c.name}: skipped (${(e as Error).message})`);
+   }
   }
 
   console.log(`\nDone. ${totalItems} new books, ${totalTakes} picks.`);

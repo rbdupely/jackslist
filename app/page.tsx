@@ -28,6 +28,7 @@ function stanceVerb(t: { stance: string | null; score: number | null }): string 
   if (t.score != null) return "scored";
   switch (t.stance) {
     case "selected": return "picked";
+    case "honored": return "honored";
     case "new_buy": return "opened a position in";
     case "added": return "added to";
     case "trimmed": return "trimmed";

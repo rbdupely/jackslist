@@ -4,6 +4,7 @@ const STYLES: Record<string, string> = {
   rave: "bg-stocks/12 text-stocks",
   positive: "bg-stocks/12 text-stocks",
   selected: "bg-stocks/12 text-stocks",
+  honored: "bg-stocks/12 text-stocks",
   mixed: "bg-gold/15 text-[#8a6516]",
   negative: "bg-flame/12 text-flame-dark",
   new_buy: "bg-stocks/12 text-stocks",
@@ -22,6 +23,7 @@ const LABELS: Record<string, string> = {
   exited: "Exited",
   called_out: "Called out",
   selected: "Picked",
+  honored: "Honored",
 };
 
 export function StanceChip({ stance, size = "md" }: { stance: string; size?: "sm" | "md" }) {
