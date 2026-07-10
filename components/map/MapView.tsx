@@ -14,14 +14,16 @@ export function MapView({
   points,
   heightClass = "h-80",
   className = "",
+  cluster = false,
 }: {
   points: MapPoint[];
   heightClass?: string;
   className?: string;
+  cluster?: boolean;
 }) {
   return (
     <div className={`relative isolate overflow-hidden ${heightClass} ${className}`}>
-      <LeafletMap points={points} />
+      <LeafletMap points={points} cluster={cluster} />
     </div>
   );
 }

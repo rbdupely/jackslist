@@ -66,6 +66,57 @@ export async function getAllItems(categorySlug = FOOD): Promise<ScoredItem[]> {
   return (data as ScoredItem[]) ?? [];
 }
 
+// Accurate category item total (the .select() list caps at 1000 rows, so
+// items.length under-reports for big categories like food).
+export async function getItemCount(categorySlug = FOOD): Promise<number> {
+  const cat = await getCategoryBySlug(categorySlug);
+  if (!cat) return 0;
+  const sb = await createClient();
+  const { count } = await sb
+    .from("items")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", cat.id);
+  return count ?? 0;
+}
+
+export type MapSpot = {
+  slug: string;
+  name: string;
+  lat: number;
+  lng: number;
+  subtype: string | null;
+  top_score: number | null;
+  city: string | null;
+};
+
+// Every item in a category that has coordinates, as light map pins. Paginates
+// past PostgREST's 1000-row default cap so the full set reaches the map.
+export async function getMappableItems(categorySlug = FOOD): Promise<MapSpot[]> {
+  const cat = await getCategoryBySlug(categorySlug);
+  if (!cat) return [];
+  const sb = await createClient();
+  const PAGE = 1000;
+  const out: MapSpot[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb
+      .from("items_scored")
+      .select("slug,name,lat,lng,subtype,top_score,city")
+      .eq("category_id", cat.id)
+      .not("lat", "is", null)
+      .not("lng", "is", null)
+      .order("top_score", { ascending: false, nullsFirst: false })
+      .range(from, from + PAGE - 1);
+    if (error) {
+      console.error("getMappableItems", error);
+      break;
+    }
+    const rows = (data as MapSpot[]) ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
 export async function getItemBySlug(
   categorySlug: string,
   slug: string,

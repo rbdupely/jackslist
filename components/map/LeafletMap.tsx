@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
 
 export type MapPoint = {
   lat: number;
@@ -65,6 +67,68 @@ function pinIcon(p: MapPoint): L.DivIcon {
   });
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+  );
+}
+
+function popupHtml(p: MapPoint): string {
+  const meta = p.meta
+    ? `<div style="font-size:12px;color:#6b6660;margin-top:2px">${escapeHtml(p.meta)}</div>`
+    : "";
+  const score =
+    p.score != null
+      ? `<div style="font-size:12px;margin-top:4px;font-weight:600">Critic score ${label(
+          p.score,
+        )} / 10 →</div>`
+      : "";
+  return `<a href="${escapeHtml(p.href)}" style="text-decoration:none;color:#17161a">
+    <div style="font-weight:700;font-size:14px">${escapeHtml(p.name)}</div>${meta}${score}</a>`;
+}
+
+// Brand-styled cluster bubble (flame circle with the count).
+function clusterIcon(cluster: { getChildCount(): number }): L.DivIcon {
+  const n = cluster.getChildCount();
+  const size = n < 10 ? 34 : n < 100 ? 42 : 50;
+  return L.divIcon({
+    className: "oc-cluster",
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:9999px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,59,47,.92);color:#fff;
+      font:700 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+      border:2px solid #fff;box-shadow:0 2px 8px rgba(23,22,26,.35);
+    ">${n}</div>`,
+    iconSize: [size, size],
+  });
+}
+
+// Imperative marker clustering (leaflet.markercluster). Kept out of react-leaflet's
+// declarative tree so it works regardless of react-leaflet version.
+function ClusterLayer({ points }: { points: MapPoint[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const group = (L as unknown as {
+      markerClusterGroup(opts: object): L.LayerGroup & { getBounds(): L.LatLngBounds };
+    }).markerClusterGroup({
+      iconCreateFunction: clusterIcon,
+      showCoverageOnHover: false,
+      maxClusterRadius: 55,
+      chunkedLoading: true,
+    });
+    for (const p of points) {
+      L.marker([p.lat, p.lng], { icon: pinIcon(p) }).bindPopup(popupHtml(p)).addTo(group);
+    }
+    map.addLayer(group);
+    if (points.length > 1) map.fitBounds(group.getBounds(), { padding: [36, 36] });
+    return () => {
+      map.removeLayer(group);
+    };
+  }, [map, points]);
+  return null;
+}
+
 // Frames the view: one point → centered; many → fit all with padding.
 function Fit({ points }: { points: MapPoint[] }) {
   const map = useMap();
@@ -82,7 +146,7 @@ function Fit({ points }: { points: MapPoint[] }) {
   return null;
 }
 
-export function LeafletMap({ points }: { points: MapPoint[] }) {
+export function LeafletMap({ points, cluster = false }: { points: MapPoint[]; cluster?: boolean }) {
   const center: [number, number] = points.length
     ? [points[0].lat, points[0].lng]
     : [39.8, -98.6]; // continental US fallback
@@ -101,28 +165,36 @@ export function LeafletMap({ points }: { points: MapPoint[] }) {
         subdomains={["a", "b", "c", "d"]}
         maxZoom={19}
       />
-      <Fit points={points} />
-      {points.map((p, i) => (
-        <Marker key={`${p.href}-${i}`} position={[p.lat, p.lng]} icon={pinIcon(p)}>
-          <Popup>
-            <a href={p.href} style={{ textDecoration: "none", color: "inherit" }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#17161a" }}>
-                {p.name}
-              </span>
-              {p.meta && (
-                <span style={{ display: "block", fontSize: 12, color: "#6b6660", marginTop: 2 }}>
-                  {p.meta}
-                </span>
-              )}
-              {p.score != null && (
-                <span style={{ display: "block", fontSize: 12, marginTop: 4, fontWeight: 600 }}>
-                  Critic score {label(p.score)} / 10 →
-                </span>
-              )}
-            </a>
-          </Popup>
-        </Marker>
-      ))}
+      {cluster ? (
+        <ClusterLayer points={points} />
+      ) : (
+        <>
+          <Fit points={points} />
+          {points.map((p, i) => (
+            <Marker key={`${p.href}-${i}`} position={[p.lat, p.lng]} icon={pinIcon(p)}>
+              <Popup>
+                <a href={p.href} style={{ textDecoration: "none", color: "inherit" }}>
+                  <span
+                    style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#17161a" }}
+                  >
+                    {p.name}
+                  </span>
+                  {p.meta && (
+                    <span style={{ display: "block", fontSize: 12, color: "#6b6660", marginTop: 2 }}>
+                      {p.meta}
+                    </span>
+                  )}
+                  {p.score != null && (
+                    <span style={{ display: "block", fontSize: 12, marginTop: 4, fontWeight: 600 }}>
+                      Critic score {label(p.score)} / 10 →
+                    </span>
+                  )}
+                </a>
+              </Popup>
+            </Marker>
+          ))}
+        </>
+      )}
     </MapContainer>
   );
 }

@@ -11,6 +11,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { CriticCard } from "@/components/CriticCard";
 import { AgreementCard } from "@/components/AgreementCard";
 import { CriticAvatar } from "@/components/CriticAvatar";
+import { TrustBand } from "@/components/TrustBand";
 import { catUI } from "@/lib/ui";
 
 const EXAMPLES = ["Best pizza in New York", "Alphabet", "Tokyo", "Apple", "Steakhouse in Las Vegas"];
@@ -136,6 +137,9 @@ export default async function Home() {
           })}
         </div>
       </section>
+
+      {/* The thesis, stated confidently */}
+      <TrustBand stats={{ critics: overview.critics, takes: overview.takes, items: overview.items }} />
 
       {/* Where critics overlap */}
       {agreed.length > 0 && (
