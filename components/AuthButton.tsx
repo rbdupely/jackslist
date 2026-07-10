@@ -46,7 +46,7 @@ export function AuthButton() {
         </span>
         <button
           onClick={signOut}
-          className="rounded-full border border-line px-3 py-1.5 font-medium text-ink transition hover:border-ink/30"
+          className="rounded-full border border-line-strong px-3 py-1.5 font-medium text-ink transition hover:border-ink"
         >
           Sign out
         </button>
@@ -57,7 +57,7 @@ export function AuthButton() {
   return (
     <Link
       href="/login"
-      className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-ink transition hover:border-ink/30"
+      className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink/90"
     >
       Sign in
     </Link>

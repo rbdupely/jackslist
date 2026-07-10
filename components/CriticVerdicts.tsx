@@ -58,29 +58,25 @@ export function CriticVerdicts({
       ))}
 
       {item.consensus_score != null && (
-        <span className="inline-flex items-center gap-2 rounded-full border border-flame/30 bg-flame/5 px-4 py-2">
-          <span className="text-sm font-medium text-ink">Critics&apos; consensus</span>
-          <span className="font-display text-lg font-semibold text-flame">
-            {formatScore(item.consensus_score)}
-          </span>
-          <span className="text-xs text-ink-soft">
-            across {item.scored_critic_count} critics
-          </span>
+        <span className="inline-flex items-center gap-2.5 rounded-full bg-ink px-4 py-2 text-white">
+          <span className="overline text-white/70">Consensus</span>
+          <span className="tnum text-lg font-bold">{formatScore(item.consensus_score)}</span>
+          <span className="text-xs text-white/60">· {item.scored_critic_count} critics</span>
         </span>
       )}
 
       {item.crowd_score != null && (
-        <span className="text-xs text-ink-soft">
+        <span className="text-xs text-faint">
           The crowd:{" "}
           {item.crowd_url ? (
-            <a href={item.crowd_url} target="_blank" rel="noreferrer" className="underline">
-              {item.crowd_source} {item.crowd_score}
+            <a href={item.crowd_url} target="_blank" rel="noreferrer" className="tnum underline">
+              {item.crowd_source} {formatScore(item.crowd_score)}
               {item.crowd_scale === "0-5" ? "★" : ""}
             </a>
           ) : (
-            <>
-              {item.crowd_source} {item.crowd_score}
-            </>
+            <span className="tnum">
+              {item.crowd_source} {formatScore(item.crowd_score)}
+            </span>
           )}
         </span>
       )}

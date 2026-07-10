@@ -1,17 +1,17 @@
-// A verdict from a critic who doesn't give scores (ACG's "Buy", a fund's
-// "New buy"). Never rendered inside the circular badge — the circle means a
-// number from one person.
+// A verdict from a critic who doesn't give scores. Never inside the circular
+// badge (the circle means a number from one person).
 const STYLES: Record<string, string> = {
-  rave: "bg-green-600 text-white",
-  positive: "bg-green-100 text-green-800",
-  mixed: "bg-amber-100 text-amber-800",
-  negative: "bg-red-100 text-red-800",
-  new_buy: "bg-green-600 text-white",
-  added: "bg-green-100 text-green-800",
-  holds: "bg-stone-100 text-stone-700",
-  trimmed: "bg-amber-100 text-amber-800",
-  exited: "bg-red-100 text-red-800",
-  called_out: "bg-stone-100 text-stone-700",
+  rave: "bg-stocks/12 text-stocks",
+  positive: "bg-stocks/12 text-stocks",
+  selected: "bg-stocks/12 text-stocks",
+  mixed: "bg-gold/15 text-[#8a6516]",
+  negative: "bg-flame/12 text-flame-dark",
+  new_buy: "bg-stocks/12 text-stocks",
+  added: "bg-stocks/12 text-stocks",
+  holds: "bg-sunk text-muted",
+  trimmed: "bg-gold/15 text-[#8a6516]",
+  exited: "bg-flame/12 text-flame-dark",
+  called_out: "bg-sunk text-muted",
 };
 
 const LABELS: Record<string, string> = {
@@ -21,15 +21,16 @@ const LABELS: Record<string, string> = {
   trimmed: "Trimmed",
   exited: "Exited",
   called_out: "Called out",
+  selected: "Picked",
 };
 
 export function StanceChip({ stance, size = "md" }: { stance: string; size?: "sm" | "md" }) {
   const label = LABELS[stance] ?? stance.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const pad = size === "sm" ? "px-2.5 py-0.5 text-xs" : "px-3 py-1 text-sm";
+  const pad = size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm";
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-full font-semibold ${pad} ${
-        STYLES[stance] ?? "bg-stone-100 text-stone-700"
+      className={`inline-flex shrink-0 items-center rounded-chip font-semibold ${pad} ${
+        STYLES[stance] ?? "bg-sunk text-muted"
       }`}
     >
       {label}

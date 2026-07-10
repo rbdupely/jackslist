@@ -42,17 +42,14 @@ export function UpvoteButton({
       aria-pressed={hasVoted}
       className={`inline-flex items-center gap-2 rounded-full font-semibold transition ${pad} ${
         hasVoted
-          ? "bg-ink text-cream"
-          : "bg-flame text-white hover:bg-flame-dark disabled:opacity-60"
+          ? "bg-ink text-white"
+          : "border border-line-strong bg-surface text-ink hover:border-ink disabled:opacity-60"
       }`}
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M12 4l7 8h-4v8H9v-8H5l7-8z"
-          fill="currentColor"
-        />
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 4l7 8h-4v8H9v-8H5l7-8z" fill="currentColor" />
       </svg>
-      <span>{count}</span>
+      <span className="tnum">{count}</span>
       <span className="font-medium">{hasVoted ? "Upvoted" : "Upvote"}</span>
     </button>
   );

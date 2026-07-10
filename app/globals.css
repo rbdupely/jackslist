@@ -1,45 +1,92 @@
 @import "tailwindcss";
 
-/* ---- Jackslist design tokens ------------------------------------------- */
+/* ============================================================================
+   OnlyCritics design system v2 — "The Tastemakers' Terminal"
+   High-contrast, data-forward aggregator. Near-white canvas, near-black ink,
+   Bricolage Grotesque display, tabular-mono numerals, per-category color.
+   ========================================================================= */
 @theme {
-  --color-cream: #fbf7ef; /* warm paper background */
-  --color-paper: #ffffff;
-  --color-ink: #191410; /* near-black, warm */
-  --color-ink-soft: #6b6259;
-  --color-flame: #e0431a; /* the one strong accent */
-  --color-flame-dark: #b8340f;
-  --color-gold: #e7a13a;
-  --color-line: #ebe2d3; /* hairline borders on cream */
+  /* Surfaces & ink (legacy names kept, revalued so existing classes cascade) */
+  --color-canvas: #f4f4f1; /* page background */
+  --color-cream: #f4f4f1; /* alias: also the "light text on dark" tone */
+  --color-surface: #ffffff;
+  --color-paper: #ffffff; /* alias: cards */
+  --color-sunk: #ecece8; /* recessed wells */
+  --color-ink: #17161a; /* primary text, near-black */
+  --color-ink-soft: #6c6b73; /* secondary text */
+  --color-muted: #6c6b73;
+  --color-faint: #9a9aa0;
+  --color-line: #e5e4df; /* hairline */
+  --color-line-strong: #d3d2cc;
 
+  /* Brand + energy */
+  --color-flame: #ff3b2f; /* brand accent (logo, active, key highlights) */
+  --color-flame-dark: #e42d22;
+  --color-gold: #e0a52a;
+
+  /* Per-category identity */
+  --color-food: #e8492b;
+  --color-stocks: #12915c;
+  --color-books: #b0741d;
+  --color-gaming: #6d47e6;
+  --color-movies: #2563c9;
+
+  /* Type */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --font-display: var(--font-display-face), "Bricolage Grotesque", var(--font-geist-sans), sans-serif;
 
-  --radius-card: 1rem;
+  /* Radii — deliberate, not everything-a-pill */
+  --radius-card: 0.875rem;
+  --radius-chip: 0.5rem;
+
+  /* Elevation */
+  --shadow-e1: 0 1px 2px rgba(20, 19, 26, 0.06), 0 1px 1px rgba(20, 19, 26, 0.04);
+  --shadow-e2: 0 4px 14px rgba(20, 19, 26, 0.08), 0 1px 3px rgba(20, 19, 26, 0.05);
+  --shadow-e3: 0 12px 34px rgba(20, 19, 26, 0.12);
 }
 
 html {
-  background: var(--color-cream);
+  background: var(--color-canvas);
   color: var(--color-ink);
 }
 
 body {
-  background: var(--color-cream);
+  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Editorial headings */
+/* Display type: tight, confident, modern grotesk */
 .font-display {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
 }
 
-/* Hide scrollbar on horizontal strips */
+/* Numerals as data — tabular mono everywhere a score/stat appears */
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Utility: overline label */
+.overline {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }

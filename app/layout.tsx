@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Fraunces } from "next/font/google";
+import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -9,21 +9,25 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "900"],
-  style: ["normal", "italic"],
+});
+
+const display = Bricolage_Grotesque({
+  variable: "--font-display-face",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://jackslist.vercel.app"),
   title: {
-    default: "OnlyCritics — Follow the person, not the average",
+    default: "OnlyCritics — Follow the critic, not the crowd",
     template: "%s · OnlyCritics",
   },
   description:
-    "Aggregate scores are noise. OnlyCritics tracks what specific, named critics actually said — food, stocks, books, gaming, movies — with a link to the exact source.",
+    "The aggregator for people with taste. Follow individual critics across food, stocks, books, gaming and movies — every score linked to its source.",
 };
 
 export default function RootLayout({
@@ -34,9 +38,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-ink">
+      <body className="flex min-h-full flex-col bg-canvas text-ink">
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

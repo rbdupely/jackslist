@@ -28,16 +28,18 @@ export function scoreTier(score: number | null | undefined): ScoreTier {
 }
 
 // Tailwind classes for the circular score badge, by tier.
+// Brand red for the elite, authoritative black for the great, outlined for the
+// rest — instantly scannable, lets photos and category color carry the vibrancy.
 export function scoreBadgeClasses(score: number | null | undefined): string {
   switch (scoreTier(score)) {
     case "elite":
-      return "bg-flame text-white";
+      return "bg-flame text-white ring-1 ring-flame-dark/20";
     case "great":
-      return "bg-ink text-cream";
+      return "bg-ink text-white";
     case "good":
-      return "bg-amber-200 text-ink";
+      return "bg-surface text-ink ring-1 ring-line-strong";
     default:
-      return "bg-stone-200 text-stone-600";
+      return "bg-sunk text-muted";
   }
 }
 

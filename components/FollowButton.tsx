@@ -30,17 +30,17 @@ export function FollowButton({
     });
   }
 
-  const pad = size === "sm" ? "px-3 py-1.5 text-sm" : "px-5 py-2.5";
+  const pad = size === "sm" ? "px-3.5 py-1.5 text-sm" : "px-5 py-2.5";
 
   return (
     <button
       onClick={onClick}
       disabled={pending}
       aria-pressed={isFollowing}
-      className={`rounded-full font-semibold transition disabled:opacity-60 ${pad} ${
+      className={`shrink-0 rounded-full font-semibold transition disabled:opacity-60 ${pad} ${
         isFollowing
-          ? "border border-line bg-paper text-ink hover:border-ink/30"
-          : "bg-ink text-cream hover:bg-ink/90"
+          ? "border border-line-strong bg-surface text-ink hover:border-ink"
+          : "bg-ink text-white hover:bg-ink/90"
       }`}
     >
       {isFollowing ? "Following" : "Follow"}

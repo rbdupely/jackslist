@@ -2,48 +2,65 @@ import Link from "next/link";
 import type { ItemWithCategory } from "@/lib/data";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { formatScore } from "@/lib/util";
+import { catUI } from "@/lib/ui";
 
-// A single item several critics have independently covered. Category-agnostic:
-// scored categories (food) show the consensus number; stance categories
-// (stocks, books) show how many critics landed on it.
+// An item several critics independently covered. Scored categories show the
+// consensus number; stance categories show the count of critics.
 export function AgreementCard({ item }: { item: ItemWithCategory }) {
+  const ui = catUI(item.categorySlug);
   const isStocks = item.categorySlug === "stocks";
   const coverLabel = isStocks
-    ? `${item.critic_count} investors disclosed it`
+    ? `${item.critic_count} investors hold it`
     : `${item.critic_count} critics covered it`;
 
   return (
     <Link
       href={`/${item.categorySlug}/${item.slug}`}
-      className="group flex items-center gap-4 rounded-card border border-line bg-paper p-4 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
+      className="group flex items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-e1 transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-e2"
     >
       {item.consensus_score != null ? (
-        <div className="flex flex-col items-center">
-          <ScoreBadge score={item.consensus_score} size="md" />
-          <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-ink-soft">
-            consensus
-          </span>
+        <div className="flex flex-col items-center gap-1">
+          <ScoreBadge score={item.consensus_score} size="lg" />
+          <span className="overline text-faint">consensus</span>
         </div>
       ) : (
-        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-full bg-ink text-cream">
-          <span className="font-display text-lg font-semibold leading-none">
+        <div className="flex flex-col items-center gap-1">
+          <div
+            className={`tnum grid h-14 w-14 place-items-center rounded-full text-xl font-bold text-white ${ui.bg}`}
+          >
             {item.critic_count}
-          </span>
-          <span className="text-[9px] uppercase tracking-wide">critics</span>
+          </div>
+          <span className="overline text-faint">{isStocks ? "holders" : "critics"}</span>
         </div>
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-lg font-semibold text-ink group-hover:text-flame">
+        <p className="truncate font-display text-lg font-bold text-ink group-hover:text-flame">
           {item.name}
         </p>
-        <p className="truncate text-sm text-ink-soft">{coverLabel}</p>
-        <p className="text-xs uppercase tracking-wide text-ink-soft/70">
+        <p className="truncate text-sm text-muted">{coverLabel}</p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-faint">
+          <span className={`h-1.5 w-1.5 rounded-full ${ui.dot}`} />
           {item.categoryName}
           {item.city ? ` · ${item.city}` : ""}
-          {item.crowd_score != null ? ` · crowd ${formatScore(item.crowd_score)}` : ""}
+          {item.crowd_score != null && (
+            <span className="tnum normal-case tracking-normal">
+              · crowd {formatScore(item.crowd_score)}
+            </span>
+          )}
         </p>
       </div>
+
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-ink"
+        aria-hidden
+      >
+        <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </Link>
   );
 }

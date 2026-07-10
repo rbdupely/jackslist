@@ -11,19 +11,20 @@ import {
 import { SearchBar } from "@/components/SearchBar";
 import { CriticCard } from "@/components/CriticCard";
 import { AgreementCard } from "@/components/AgreementCard";
+import { catUI } from "@/lib/ui";
 
 const EXAMPLES = ["Best pizza in New York", "Alphabet", "Tokyo", "Apple", "Steakhouse in Las Vegas"];
 
 const TILE_COPY: Record<string, string> = {
   food: "Not the Yelp average — the palate you trust.",
-  stocks: "Not an index fund — what they actually disclosed.",
+  stocks: "Not an index fund — what they actually bought.",
   books: "Not the Goodreads average — the shelf you trust.",
   gaming: "Not IGN — the reviewer.",
   movies: "Not Rotten Tomatoes — the critic.",
 };
 
-function stanceVerb(t: { stance: string | null; score: number | null; categorySlug: string }): string {
-  if (t.score != null) return `scored`;
+function stanceVerb(t: { stance: string | null; score: number | null }): string {
+  if (t.score != null) return "scored";
   switch (t.stance) {
     case "selected": return "picked";
     case "new_buy": return "opened a position in";
@@ -51,79 +52,86 @@ export default async function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-4 pb-8 pt-16 text-center sm:px-6 sm:pt-24">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-flame">
-          Follow the person, not the average
-        </p>
-        <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
-          Taste has a name.
-        </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
-          Aggregate scores are noise. OnlyCritics tracks what specific, named people actually said —
-          with the receipt.
-        </p>
-        <div className="mx-auto mt-8 max-w-2xl">
-          <SearchBar variant="hero" />
+      <section className="border-b border-line bg-surface">
+        <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
+          <p className="overline mb-4 text-flame">Follow the critic, not the crowd</p>
+          <h1 className="font-display text-5xl font-extrabold tracking-tight text-ink sm:text-[4.25rem]">
+            Taste has a name.
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
+            The aggregator for people with taste. Real scores from named critics — food, stocks,
+            books and more — every one linked to its source.
+          </p>
+          <div className="mx-auto mt-8 max-w-2xl">
+            <SearchBar variant="hero" placeholder="Search a spot, a stock, a book, a critic…" />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            {EXAMPLES.map((ex) => (
+              <Link
+                key={ex}
+                href={`/search?q=${encodeURIComponent(ex)}`}
+                className="rounded-chip border border-line bg-canvas px-3 py-1.5 text-sm text-muted transition hover:border-line-strong hover:text-ink"
+              >
+                {ex}
+              </Link>
+            ))}
+          </div>
+          <div className="tnum mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm text-muted">
+            <span><span className="font-bold text-ink">{overview.critics}</span> critics</span>
+            <span className="text-line-strong">·</span>
+            <span><span className="font-bold text-ink">{overview.takes.toLocaleString()}</span> takes</span>
+            <span className="text-line-strong">·</span>
+            <span><span className="font-bold text-ink">{overview.items.toLocaleString()}</span> things rated</span>
+          </div>
         </div>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          {EXAMPLES.map((ex) => (
-            <Link
-              key={ex}
-              href={`/search?q=${encodeURIComponent(ex)}`}
-              className="rounded-full border border-line bg-paper px-3.5 py-1.5 text-sm text-ink-soft transition hover:border-ink/30 hover:text-ink"
-            >
-              {ex}
-            </Link>
-          ))}
-        </div>
-        <p className="mt-8 text-sm text-ink-soft">
-          <span className="font-semibold text-ink">{overview.critics}</span> critics ·{" "}
-          <span className="font-semibold text-ink">{overview.takes.toLocaleString()}</span> takes ·{" "}
-          <span className="font-semibold text-ink">{overview.items.toLocaleString()}</span> things rated
-        </p>
       </section>
 
       {/* Categories */}
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Categories</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((c) => (
-            <Link
-              key={c.id}
-              href={`/${c.slug}`}
-              className="group flex flex-col rounded-card border border-line bg-paper p-5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
-            >
-              <h3 className="font-display text-2xl font-semibold text-ink group-hover:text-flame">
-                {c.name}
-              </h3>
-              <p className="mt-1 text-sm text-ink-soft">{TILE_COPY[c.slug]}</p>
-              <p className="mt-4 text-sm font-medium text-ink-soft">
-                {c.criticCount > 0 ? (
-                  <>
-                    {c.criticCount} {c.criticCount === 1 ? "critic" : "critics"} ·{" "}
-                    {c.itemCount.toLocaleString()}{" "}
-                    {c.itemCount === 1 ? c.item_noun : `${c.item_noun}s`}
-                  </>
-                ) : (
-                  <span className="text-ink-soft/70">Coming soon</span>
-                )}
-              </p>
-            </Link>
-          ))}
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+          {stats.map((c) => {
+            const ui = catUI(c.slug);
+            const live = c.criticCount > 0;
+            return (
+              <Link
+                key={c.id}
+                href={`/${c.slug}`}
+                className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-surface p-4 shadow-e1 transition hover:-translate-y-1 hover:shadow-e3"
+              >
+                <span className={`absolute inset-x-0 top-0 h-1 ${ui.bg}`} />
+                <span className={`overline ${ui.text}`}>{ui.label}</span>
+                <p className="mt-2 text-[13px] leading-snug text-muted">{TILE_COPY[c.slug]}</p>
+                <p className="tnum mt-6 text-sm font-semibold text-ink">
+                  {live ? (
+                    <>
+                      {c.criticCount} {c.criticCount === 1 ? "critic" : "critics"}
+                      <span className="font-normal text-faint"> · {c.itemCount.toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className="font-normal text-faint">Coming soon</span>
+                  )}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      {/* Where the critics overlap */}
+      {/* Where critics overlap */}
       {agreed.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-          <div className="mb-6">
-            <h2 className="font-display text-3xl font-semibold text-ink">Where critics overlap</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              The same pick, reached independently — a pizza two critics both rated, a stock several
-              investors all disclosed.
-            </p>
+        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+                Where critics overlap
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                The same pick, reached independently — a pizza two critics both rated, a stock
+                several investors all hold.
+              </p>
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {agreed.map((i) => (
               <AgreementCard key={i.id} item={i} />
             ))}
@@ -131,78 +139,86 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Fresh takes */}
-      {recent.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-          <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Just in</h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-paper">
-            {recent.map((t) => (
-              <li key={t.id}>
-                <Link
-                  href={`/${t.categorySlug}/${t.item.slug}`}
-                  className="flex items-center gap-3 px-4 py-3 transition hover:bg-cream"
-                >
-                  {t.critic.avatar_url ? (
-                    <Image
-                      src={t.critic.avatar_url}
-                      alt={t.critic.name}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-flame/10 text-sm font-semibold text-flame">
-                      {t.critic.name.slice(0, 1)}
-                    </div>
-                  )}
-                  <p className="min-w-0 flex-1 truncate text-sm text-ink">
-                    <span className="font-semibold">{t.critic.name}</span>{" "}
-                    <span className="text-ink-soft">{stanceVerb(t)}</span>{" "}
-                    <span className="font-medium">{t.item.name}</span>
-                  </p>
-                  {t.score_original && (
-                    <span className="shrink-0 font-display text-sm font-semibold text-flame">
-                      {t.score_original}
-                    </span>
-                  )}
-                  {t.published_on && (
-                    <span className="hidden shrink-0 text-xs text-ink-soft sm:inline">
-                      {t.published_on}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* Fresh takes + critics side by side on large screens */}
+      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_1fr]">
+        {recent.length > 0 && (
+          <div>
+            <h2 className="mb-5 font-display text-2xl font-extrabold text-ink sm:text-3xl">Just in</h2>
+            <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-e1">
+              {recent.map((t) => {
+                const ui = catUI(t.categorySlug);
+                return (
+                  <li key={t.id}>
+                    <Link
+                      href={`/${t.categorySlug}/${t.item.slug}`}
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-canvas"
+                    >
+                      {t.critic.avatar_url ? (
+                        <Image
+                          src={t.critic.avatar_url}
+                          alt={t.critic.name}
+                          width={34}
+                          height={34}
+                          className="h-[34px] w-[34px] rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full ${ui.tint} text-sm font-bold ${ui.text}`}
+                        >
+                          {t.critic.name.slice(0, 1)}
+                        </div>
+                      )}
+                      <p className="min-w-0 flex-1 truncate text-sm text-ink">
+                        <span className="font-semibold">{t.critic.name}</span>{" "}
+                        <span className="text-muted">{stanceVerb(t)}</span>{" "}
+                        <span className="font-medium">{t.item.name}</span>
+                      </p>
+                      {t.score_original && (
+                        <span className="tnum shrink-0 text-sm font-bold text-flame">
+                          {t.score_original}
+                        </span>
+                      )}
+                      {t.published_on && (
+                        <span className="tnum hidden shrink-0 text-xs text-faint sm:inline">
+                          {t.published_on}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
-      {/* Your critics */}
-      {followed.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-          <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Your critics</h2>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {followed.map((c) => (
+        <div>
+          <div className="mb-5 flex items-baseline justify-between">
+            <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+              {followed.length > 0 ? "Your critics" : "Who to follow"}
+            </h2>
+          </div>
+          <div className="flex flex-col gap-3">
+            {(followed.length > 0 ? followed : critics.slice(0, 6)).map((c) => (
               <CriticCard
                 key={c.id}
                 critic={c}
                 categorySlug={catBySlug.get(c.category_id) ?? "food"}
-                following
+                following={following.has(c.id)}
               />
             ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* All critics */}
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="font-display text-3xl font-semibold text-ink">The critics</h2>
-          <p className="hidden text-sm text-ink-soft sm:block">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <div className="mb-5 flex items-end justify-between">
+          <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">The full roster</h2>
+          <p className="hidden text-sm text-muted sm:block">
             Every take on this site traces back to one of them
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {critics.map((c) => (
             <CriticCard
               key={c.id}
