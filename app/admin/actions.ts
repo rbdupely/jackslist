@@ -19,7 +19,7 @@ export type AdminResult = { ok: boolean; message?: string };
 
 export async function setRequestStatus(
   id: string,
-  status: "Requested" | "Planned" | "Filmed",
+  status: "Requested" | "Planned" | "Covered",
 ): Promise<AdminResult> {
   await requireAdmin();
   const admin = createAdminClient();
@@ -30,27 +30,27 @@ export async function setRequestStatus(
   return { ok: true };
 }
 
-// Link a filmed request to the venue that resulted from it (by slug), and mark
-// it Filmed.
+// Link a covered request to the item that resulted from it (by slug), and mark
+// it Covered.
 export async function linkRequestVenue(id: string, slug: string): Promise<AdminResult> {
   await requireAdmin();
   const admin = createAdminClient();
 
   const trimmed = slug.trim();
-  let venueId: string | null = null;
+  let itemId: string | null = null;
   if (trimmed) {
-    const { data: venue } = await admin
-      .from("venues")
+    const { data: item } = await admin
+      .from("items")
       .select("id")
       .eq("slug", trimmed)
       .maybeSingle();
-    if (!venue) return { ok: false, message: `No venue with slug "${trimmed}"` };
-    venueId = (venue as { id: string }).id;
+    if (!item) return { ok: false, message: `No item with slug "${trimmed}"` };
+    itemId = (item as { id: string }).id;
   }
 
   const { error } = await admin
     .from("requests")
-    .update({ filled_venue_id: venueId, status: venueId ? "Filmed" : "Requested" })
+    .update({ filled_item_id: itemId, status: itemId ? "Covered" : "Requested" })
     .eq("id", id);
   if (error) return { ok: false, message: error.message };
   revalidatePath("/admin");

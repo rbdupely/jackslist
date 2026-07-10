@@ -1,11 +1,14 @@
-// Category normalization.
+// Food subtype normalization.
 //
-// The source data has ~50 raw category strings, many compound
-// ("Deli / sandwich shop", "Restaurant / steakhouse", "Market/Food Hall").
-// We collapse them to a clean, canonical primary category used for filtering,
-// grouping, and curated-list titles.
+// In the OnlyCritics model, "category" is the top level (food, gaming, stocks,
+// books, movies) and "subtype" is the in-category taxonomy. For food that's
+// Pizza / BBQ / Deli / ... — the 15 values that drive curated lists, the
+// category filter, and the search parser.
+//
+// The source data has ~50 raw strings, many compound ("Deli / sandwich shop",
+// "Market/Food Hall"), which we collapse onto these.
 
-export const CATEGORIES = [
+export const FOOD_SUBTYPES = [
   "Restaurant",
   "Pizza",
   "Sandwich Shop",
@@ -23,11 +26,11 @@ export const CATEGORIES = [
   "Activity",
 ] as const;
 
-export type Category = (typeof CATEGORIES)[number];
+export type FoodSubtype = (typeof FOOD_SUBTYPES)[number];
 
 // Keyword rules, evaluated in priority order. First match wins, so more
 // specific concepts (pizza, bbq, steak) are checked before broad ones.
-const RULES: Array<[Category, RegExp]> = [
+const RULES: Array<[FoodSubtype, RegExp]> = [
   ["Pizza", /pizza|pizzeria/],
   ["BBQ", /bbq|barbecue|barbeque/],
   ["Steakhouse", /steak/],
@@ -45,7 +48,7 @@ const RULES: Array<[Category, RegExp]> = [
   ["Restaurant", /restaurant|fine dining|buffet|takeout|fast food/],
 ];
 
-export function normalizeCategory(raw: string | null | undefined): Category {
+export function normalizeFoodSubtype(raw: string | null | undefined): FoodSubtype {
   const s = (raw ?? "").toLowerCase().trim();
   if (!s) return "Restaurant";
   for (const [cat, re] of RULES) {

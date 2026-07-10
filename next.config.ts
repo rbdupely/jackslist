@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "streetviewpixels-pa.googleapis.com" },
     ],
   },
+  async redirects() {
+    return [
+      // Jackslist venue URLs live on as food items. Old links must not break.
+      { source: "/venue/:slug", destination: "/food/:slug", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

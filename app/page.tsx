@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { getAllVenues, getCities } from "@/lib/data";
+import { getAllItems, getCities, FOOD } from "@/lib/data";
 import { homeFeaturedLists, mostFeatured } from "@/lib/curate";
 import { SearchBar } from "@/components/SearchBar";
 import { CuratedListCard } from "@/components/CuratedListCard";
-import { VenueCard } from "@/components/VenueCard";
+import { ItemCard } from "@/components/ItemCard";
 
 const EXAMPLES = [
   "Best pizza in New York",
@@ -14,12 +14,12 @@ const EXAMPLES = [
 ];
 
 export default async function Home() {
-  const venues = await getAllVenues();
-  const lists = homeFeaturedLists(venues);
-  const featured = mostFeatured(venues, 8);
+  const items = await getAllItems(FOOD);
+  const lists = homeFeaturedLists(items);
+  const featured = mostFeatured(items, 8);
   const cities = (await getCities()).slice(0, 16);
-  const venueCount = venues.length;
-  const cityCount = new Set(venues.map((v) => v.city).filter(Boolean)).size;
+  const itemCount = items.length;
+  const cityCount = new Set(items.map((v) => v.city).filter(Boolean)).size;
 
   return (
     <div>
@@ -34,7 +34,7 @@ export default async function Home() {
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
           Every place from <span className="font-medium text-ink">Jack&apos;s Dining Room</span> —
-          ranked, with his verdict and the dish to get. {venueCount} spots across {cityCount} cities.
+          ranked, with his verdict and the dish to get. {itemCount} spots across {cityCount} cities.
         </p>
 
         <div className="mx-auto mt-8 max-w-2xl">
@@ -81,7 +81,7 @@ export default async function Home() {
           <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
             {featured.map((v) => (
               <div key={v.id} className="w-72 shrink-0 snap-start">
-                <VenueCard venue={v} />
+                <ItemCard item={v} categorySlug={FOOD} />
               </div>
             ))}
           </div>

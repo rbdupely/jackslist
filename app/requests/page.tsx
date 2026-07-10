@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const STATUS_STYLES: Record<string, string> = {
   Requested: "bg-stone-100 text-stone-700",
   Planned: "bg-amber-100 text-amber-800",
-  Filmed: "bg-green-100 text-green-800",
+  Covered: "bg-green-100 text-green-800",
 };
 
 function titleCase(s: string): string {
@@ -21,10 +21,7 @@ function titleCase(s: string): string {
 }
 
 function requestLabel(r: RequestRow): string {
-  const noun =
-    r.cuisine && r.category
-      ? `${r.cuisine} ${r.category}`
-      : r.category ?? r.cuisine ?? r.query_text ?? "a spot";
+  const noun = r.subject ?? r.query_text ?? "a pick";
   return `Best ${titleCase(noun)}${r.city ? ` in ${titleCase(r.city)}` : ""}`;
 }
 

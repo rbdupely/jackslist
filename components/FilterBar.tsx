@@ -6,10 +6,10 @@ const PRICES = ["$", "$$", "$$$", "$$$$"];
 
 export function FilterBar({
   cities,
-  categories,
+  subtypes,
 }: {
   cities: string[];
-  categories: string[];
+  subtypes: string[];
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -24,7 +24,7 @@ export function FilterBar({
   const selectClass =
     "rounded-full border border-line bg-paper px-4 py-2 text-sm text-ink outline-none transition hover:border-ink/30 focus:border-flame";
 
-  const hasFilters = ["city", "category", "cuisine", "price"].some((k) => params.get(k));
+  const hasFilters = ["city", "subtype", "cuisine", "price"].some((k) => params.get(k));
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -44,12 +44,12 @@ export function FilterBar({
 
       <select
         className={selectClass}
-        value={params.get("category") ?? ""}
-        onChange={(e) => update("category", e.target.value)}
+        value={params.get("subtype") ?? ""}
+        onChange={(e) => update("subtype", e.target.value)}
         aria-label="Filter by category"
       >
         <option value="">All categories</option>
-        {categories.map((c) => (
+        {subtypes.map((c) => (
           <option key={c} value={c}>
             {c}
           </option>

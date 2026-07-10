@@ -1,28 +1,28 @@
 // Pure helpers (no DB) for building curated lists and parsing search queries.
-import type { Venue } from "@/lib/types";
-import { CATEGORIES, normalizeCategory, type Category } from "@/lib/categories";
+import type { ScoredItem } from "@/lib/types";
+import { FOOD_SUBTYPES, normalizeFoodSubtype, type FoodSubtype } from "@/lib/categories";
 import { citySlug } from "@/lib/util";
 
 export type CuratedList = {
   title: string;
   href: string;
   city: string | null;
-  category: Category;
-  venues: Venue[];
+  subtype: FoodSubtype;
+  items: ScoredItem[];
   count: number;
   topScore: number;
 };
 
-function topScoreOf(vs: Venue[]): number {
-  return vs.reduce((m, v) => Math.max(m, v.jack_score ?? 0), 0);
+function topScoreOf(vs: ScoredItem[]): number {
+  return vs.reduce((m, v) => Math.max(m, v.top_score ?? 0), 0);
 }
 
-// City + Category lists (e.g. "Best Pizza in New York City").
-export function cityCategoryLists(venues: Venue[], minSize = 3): CuratedList[] {
-  const groups = new Map<string, Venue[]>();
-  for (const v of venues) {
-    if (!v.city || !v.category) continue;
-    const key = `${v.city}|||${v.category}`;
+// City + subtype lists (e.g. "Best Pizza in New York City").
+export function cityCategoryLists(items: ScoredItem[], minSize = 3): CuratedList[] {
+  const groups = new Map<string, ScoredItem[]>();
+  for (const v of items) {
+    if (!v.city || !v.subtype) continue;
+    const key = `${v.city}|||${v.subtype}`;
     const arr = groups.get(key);
     if (arr) arr.push(v);
     else groups.set(key, [v]);
@@ -30,13 +30,13 @@ export function cityCategoryLists(venues: Venue[], minSize = 3): CuratedList[] {
   const lists: CuratedList[] = [];
   for (const [key, vs] of groups) {
     if (vs.length < minSize) continue;
-    const [city, category] = key.split("|||");
+    const [city, subtype] = key.split("|||");
     lists.push({
-      title: `Best ${category} in ${city}`,
-      href: `/search?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`,
+      title: `Best ${subtype} in ${city}`,
+      href: `/search?city=${encodeURIComponent(city)}&subtype=${encodeURIComponent(subtype)}`,
       city,
-      category: category as Category,
-      venues: vs,
+      subtype: subtype as FoodSubtype,
+      items: vs,
       count: vs.length,
       topScore: topScoreOf(vs),
     });
@@ -44,21 +44,21 @@ export function cityCategoryLists(venues: Venue[], minSize = 3): CuratedList[] {
   return lists.sort((a, b) => b.topScore - a.topScore || b.count - a.count);
 }
 
-// Global category lists across all cities (e.g. "Best BBQ").
+// Global subtype lists across all cities (e.g. "Best BBQ").
 export function globalCategoryLists(
-  venues: Venue[],
-  categories: Category[],
+  items: ScoredItem[],
+  subtypes: FoodSubtype[],
 ): CuratedList[] {
   const lists: CuratedList[] = [];
-  for (const category of categories) {
-    const vs = venues.filter((v) => v.category === category);
+  for (const subtype of subtypes) {
+    const vs = items.filter((v) => v.subtype === subtype);
     if (vs.length < 3) continue;
     lists.push({
-      title: `Best ${category}`,
-      href: `/search?category=${encodeURIComponent(category)}`,
+      title: `Best ${subtype}`,
+      href: `/search?subtype=${encodeURIComponent(subtype)}`,
       city: null,
-      category,
-      venues: vs,
+      subtype,
+      items: vs,
       count: vs.length,
       topScore: topScoreOf(vs),
     });
@@ -66,11 +66,9 @@ export function globalCategoryLists(
   return lists;
 }
 
-// The set of lists shown on the home page: a mix of the strongest city+category
-// lists plus a few marquee global category lists, de-duplicated by title.
-export function homeFeaturedLists(venues: Venue[]): CuratedList[] {
-  const global = globalCategoryLists(venues, ["BBQ", "Steakhouse", "Pizza", "Sandwich Shop"]);
-  const cityCat = cityCategoryLists(venues, 3).slice(0, 12);
+export function homeFeaturedLists(items: ScoredItem[]): CuratedList[] {
+  const global = globalCategoryLists(items, ["BBQ", "Steakhouse", "Pizza", "Sandwich Shop"]);
+  const cityCat = cityCategoryLists(items, 3).slice(0, 12);
   const seen = new Set<string>();
   const out: CuratedList[] = [];
   for (const l of [...cityCat.slice(0, 8), ...global, ...cityCat.slice(8)]) {
@@ -81,10 +79,10 @@ export function homeFeaturedLists(venues: Venue[]): CuratedList[] {
   return out.slice(0, 9);
 }
 
-export function mostFeatured(venues: Venue[], limit = 8): Venue[] {
-  return [...venues]
-    .filter((v) => v.mention_count > 1)
-    .sort((a, b) => b.mention_count - a.mention_count || (b.jack_score ?? 0) - (a.jack_score ?? 0))
+export function mostFeatured(items: ScoredItem[], limit = 8): ScoredItem[] {
+  return [...items]
+    .filter((v) => v.take_count > 1)
+    .sort((a, b) => b.take_count - a.take_count || (b.top_score ?? 0) - (a.top_score ?? 0))
     .slice(0, limit);
 }
 
@@ -92,12 +90,11 @@ export function mostFeatured(venues: Venue[], limit = 8): Venue[] {
 
 export type ParsedQuery = {
   raw: string;
-  category: Category | null;
+  subtype: FoodSubtype | null;
   city: string | null;
   cuisine: string | null;
 };
 
-// Common abbreviations mapped to canonical city names (matched as whole words).
 const CITY_ABBR: Record<string, string> = {
   nyc: "New York City",
   la: "Los Angeles",
@@ -113,16 +110,12 @@ function cityAliases(city: string): string[] {
   return out;
 }
 
-// Try to pull a category and a known city out of a free-text query like
-// "best pizza in new york" or "tacos LA". `knownCities` comes from the DB so
-// city detection stays accurate.
 export function parseQuery(raw: string, knownCities: string[]): ParsedQuery {
   const lower = raw.toLowerCase().trim();
   const text = ` ${lower} `;
   const tokens = lower.split(/\s+/);
   let city: string | null = null;
 
-  // Whole-word abbreviations first (avoid "la" matching inside other words).
   for (const [abbr, canonical] of Object.entries(CITY_ABBR)) {
     if (tokens.includes(abbr) && knownCities.some((c) => c === canonical)) {
       city = canonical;
@@ -130,7 +123,6 @@ export function parseQuery(raw: string, knownCities: string[]): ParsedQuery {
     }
   }
 
-  // Longest city name first, so "New York City" wins over "New York".
   if (!city) {
     for (const c of [...knownCities].sort((a, b) => b.length - a.length)) {
       if (cityAliases(c).some((a) => text.includes(` ${a}`))) {
@@ -140,21 +132,18 @@ export function parseQuery(raw: string, knownCities: string[]): ParsedQuery {
     }
   }
 
-  let category: Category | null = null;
-  for (const cat of CATEGORIES) {
-    const needle = cat.toLowerCase();
-    if (text.includes(needle)) {
-      category = cat;
+  let subtype: FoodSubtype | null = null;
+  for (const cat of FOOD_SUBTYPES) {
+    if (text.includes(cat.toLowerCase())) {
+      subtype = cat;
       break;
     }
   }
-  // Fall back to keyword classifier (catches "pizzeria", "barbecue", etc.)
-  if (!category) {
-    const guess = normalizeCategory(raw);
-    if (guess !== "Restaurant" || /\brestaurant\b/.test(text)) category = guess;
+  if (!subtype) {
+    const guess = normalizeFoodSubtype(raw);
+    if (guess !== "Restaurant" || /\brestaurant\b/.test(text)) subtype = guess;
   }
 
-  // Cuisine = what's left after removing filler + city + category words.
   let cuisine = lower;
   const strip = new Set([
     "best", "top", "good", "great", "the", "in", "near", "me", "for", "a", "of", "and",
@@ -164,28 +153,32 @@ export function parseQuery(raw: string, knownCities: string[]): ParsedQuery {
     const abbr = Object.entries(CITY_ABBR).find(([, c]) => c === city)?.[0];
     if (abbr) strip.add(abbr);
   }
-  if (category) cuisine = cuisine.replaceAll(category.toLowerCase(), " ");
+  if (subtype) cuisine = cuisine.replaceAll(subtype.toLowerCase(), " ");
   cuisine = cuisine
     .split(/\s+/)
     .filter((w) => w && !strip.has(w))
     .join(" ")
     .trim();
 
-  return { raw, category, city, cuisine: cuisine || null };
+  return { raw, subtype, city, cuisine: cuisine || null };
 }
 
-// Normalized key used to dedupe requests: city|category|cuisine, lowercased.
-export function normalizedKey(p: ParsedQuery): string {
-  return [p.city ?? "", p.category ?? "", p.cuisine ?? ""]
-    .map((s) => s.toLowerCase().trim())
-    .join("|");
+// The request system keys on category|subject|qualifier.
+export function requestSubject(p: ParsedQuery): string {
+  return (p.subtype ?? p.cuisine ?? p.raw).trim();
+}
+
+export function requestQualifier(p: ParsedQuery): string {
+  return p.city ?? "";
 }
 
 export function requestPrompt(p: ParsedQuery): string {
-  const what = p.category ?? p.cuisine ?? "spots";
+  const noun =
+    p.cuisine && p.subtype
+      ? `${p.cuisine} ${p.subtype.toLowerCase()}`
+      : p.subtype ?? p.cuisine ?? "spots";
   const where = p.city ? ` in ${p.city}` : "";
-  const noun = p.cuisine && p.category ? `${p.cuisine} ${p.category.toLowerCase()}` : what;
-  return `Jack hasn't reviewed the best ${noun}${where} yet`;
+  return `No critic has covered the best ${noun}${where} yet`;
 }
 
 export { citySlug };

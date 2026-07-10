@@ -5,7 +5,13 @@ import { recordRequestAction, type RequestState } from "@/app/actions";
 import { requestPrompt, type ParsedQuery } from "@/lib/curate";
 import { UpvoteButton } from "@/components/UpvoteButton";
 
-export function RequestZeroState({ parsed }: { parsed: ParsedQuery }) {
+export function RequestZeroState({
+  parsed,
+  categorySlug = "food",
+}: {
+  parsed: ParsedQuery;
+  categorySlug?: string;
+}) {
   const [state, setState] = useState<RequestState | null>(null);
   const [loading, setLoading] = useState(true);
   const recorded = useRef(false);
@@ -13,10 +19,10 @@ export function RequestZeroState({ parsed }: { parsed: ParsedQuery }) {
   useEffect(() => {
     if (recorded.current) return;
     recorded.current = true;
-    recordRequestAction(parsed)
+    recordRequestAction(parsed, categorySlug)
       .then(setState)
       .finally(() => setLoading(false));
-  }, [parsed]);
+  }, [parsed, categorySlug]);
 
   return (
     <div className="mx-auto max-w-xl rounded-card border border-line bg-paper p-8 text-center sm:p-12">
@@ -27,8 +33,8 @@ export function RequestZeroState({ parsed }: { parsed: ParsedQuery }) {
         {requestPrompt(parsed)}.
       </h2>
       <p className="mx-auto mt-3 max-w-md text-ink-soft">
-        Jack hasn&apos;t filmed this one. Upvote it and it climbs the list of places the community
-        wants him to review next.
+        Nobody&apos;s covered this one. Upvote it and it climbs the list of what the community
+        wants reviewed next.
       </p>
 
       <div className="mt-7 flex flex-col items-center gap-3">

@@ -27,7 +27,23 @@
       "Bash(security find-internet-password *)",
       "Bash(git add *)",
       "Bash(grep -E 'raw/|\\\\.env\\\\.local$|\\\\.xlsx')",
-      "Bash(xargs -I{} du -k {})"
+      "Bash(xargs -I{} du -k {})",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "mcp__debc5294-2068-4e14-a048-ab5bec6307c5__get_deployment",
+      "Bash(node --env-file=.env.local scripts/enrich.ts --limit 3)",
+      "Bash(python3 -c 'import urllib.parse;print\\(urllib.parse.quote\\(\"Mama'\"'\"'s Too, New York City, USA\"\\)\\)')",
+      "Bash(curl -s 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=__CMDSUB_OUTPUT__&key=__TRACKED_VAR__')",
+      "Bash(python3 -c 'import sys,json;d=json.load\\(sys.stdin\\);print\\(\"status:\",d.get\\(\"status\"\\)\\);print\\(\"error:\",d.get\\(\"error_message\",\"\\(none\\)\"\\)\\);print\\(\"results:\",len\\(d.get\\(\"results\",[]\\)\\)\\)')",
+      "Bash(python3 -c 'import sys,json;d=json.load\\(sys.stdin\\);p=\\(d.get\\(\"places\"\\) or [{}]\\)[0];print\\(\"keys:\",list\\(d.keys\\(\\)\\)\\);print\\(\"id:\",p.get\\(\"id\"\\)\\);print\\(\"name:\",\\(p.get\\(\"displayName\"\\) or {}\\).get\\(\"text\"\\)\\);print\\(\"addr:\",p.get\\(\"formattedAddress\"\\)\\);print\\(\"loc:\",p.get\\(\"location\"\\)\\);print\\(\"rating:\",p.get\\(\"rating\"\\)\\);print\\(\"mapsUri:\",p.get\\(\"googleMapsUri\"\\)\\);print\\(\"photos:\",len\\(p.get\\(\"photos\",[]\\)\\), \\(p.get\\(\"photos\"\\) or [{}]\\)[0].get\\(\"name\",\"\"\\)[:40]\\);print\\(\"hours:\",bool\\(p.get\\(\"regularOpeningHours\"\\)\\)\\)')",
+      "Bash(curl -s -X POST https://places.googleapis.com/v1/places:searchText -H 'Content-Type: application/json' -H 'X-Goog-Api-Key: __TRACKED_VAR__' -H 'X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.googleMapsUri' -d '{\"textQuery\":\"Mama Too New York City\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(echo \"=== tsc exit: $? ===\")",
+      "Bash(node --env-file=.env.local scripts/enrich.ts --limit 1)",
+      "mcp__debc5294-2068-4e14-a048-ab5bec6307c5__list_deployments",
+      "Bash(python3 -c 'import sys,json;d=json.load\\(sys.stdin\\); *)",
+      "Bash(node --env-file=.env.local scripts/photos.ts)"
     ]
   }
 }

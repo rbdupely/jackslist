@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { normalizedKey, type ParsedQuery } from "@/lib/curate";
+import { requestQualifier, requestSubject, type ParsedQuery } from "@/lib/curate";
 
 export type RequestState = {
   id: string;
@@ -12,19 +12,21 @@ export type RequestState = {
 };
 
 // Record a zero-result search as a request (create, or bump if it exists).
-// Returns the request so the client can render its live upvote count.
-export async function recordRequestAction(parsed: ParsedQuery): Promise<RequestState | null> {
-  const key = normalizedKey(parsed);
-  if (!key.replace(/\|/g, "").trim()) return null; // nothing meaningful to record
+// Keyed on category|subject|qualifier, so the loop works in every category.
+export async function recordRequestAction(
+  parsed: ParsedQuery,
+  categorySlug = "food",
+): Promise<RequestState | null> {
+  const subject = requestSubject(parsed);
+  if (!subject) return null; // nothing meaningful to record
 
   const sb = await createClient();
   const { data, error } = await sb
-    .rpc("record_request", {
-      p_key: key,
+    .rpc("record_request_v2", {
+      p_category_slug: categorySlug,
+      p_subject: subject,
+      p_qualifier: requestQualifier(parsed),
       p_query: parsed.raw,
-      p_city: parsed.city,
-      p_category: parsed.category,
-      p_cuisine: parsed.cuisine,
     })
     .maybeSingle();
 

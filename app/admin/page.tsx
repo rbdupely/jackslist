@@ -52,7 +52,7 @@ export default async function AdminPage() {
           >
             <div>
               <p className="font-display text-lg font-semibold text-ink">
-                {[r.cuisine, r.category].filter(Boolean).join(" ") || r.query_text}
+                {r.subject || r.query_text}
                 {r.city ? <span className="text-ink-soft"> · {r.city}</span> : null}
               </p>
               <p className="text-xs text-ink-soft">

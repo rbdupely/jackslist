@@ -3,7 +3,7 @@ import type { CuratedList } from "@/lib/curate";
 import { formatScore } from "@/lib/util";
 
 export function CuratedListCard({ list }: { list: CuratedList }) {
-  const top = list.venues.slice(0, 3);
+  const top = list.items.slice(0, 3);
   return (
     <Link
       href={list.href}
@@ -22,7 +22,7 @@ export function CuratedListCard({ list }: { list: CuratedList }) {
               <span className="font-display font-semibold text-ink-soft">{i + 1}.</span>
               <span className="truncate text-ink">{v.name}</span>
               <span className="ml-auto shrink-0 font-display font-semibold text-flame">
-                {formatScore(v.jack_score)}
+                {formatScore(v.top_score)}
               </span>
             </li>
           ))}

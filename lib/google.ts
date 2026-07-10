@@ -1,17 +1,19 @@
 // SERVER-ONLY Google Places helpers. Uses the Places API (New) — a single
 // Text Search call returns all the fields we need. Photos are served through
 // our own /api/place-photo route so the key is never exposed to the browser.
-import type { Venue } from "@/lib/types";
+import type { Item } from "@/lib/types";
 
 const BASE = "https://places.googleapis.com/v1";
 
+// Shaped for the `items` table. google_place_id lives inside external_ids,
+// which callers must merge into the existing jsonb rather than replace.
 export type EnrichmentFields = {
   google_place_id: string | null;
   address: string | null;
   lat: number | null;
   lng: number | null;
   google_rating: number | null;
-  google_photo_url: string | null;
+  photo_url: string | null;
   maps_url: string | null;
   hours: { weekday_text?: string[] } | null;
   enriched_at: string;
@@ -64,10 +66,10 @@ async function searchPlace(query: string): Promise<NewPlace | null> {
 // Look a venue up on Google and return the fields to persist, or null if no
 // match was found.
 export async function fetchEnrichment(
-  venue: Pick<Venue, "name" | "city" | "country">,
+  item: Pick<Item, "name" | "city" | "country">,
   nowIso: string,
 ): Promise<EnrichmentFields | null> {
-  const query = [venue.name, venue.city, venue.country].filter(Boolean).join(", ");
+  const query = [item.name, item.city, item.country].filter(Boolean).join(", ");
   const p = await searchPlace(query);
   if (!p || !p.id) return null;
 
@@ -78,7 +80,7 @@ export async function fetchEnrichment(
     lat: p.location?.latitude ?? null,
     lng: p.location?.longitude ?? null,
     google_rating: p.rating ?? null,
-    google_photo_url: photoName
+    photo_url: photoName
       ? `/api/place-photo?name=${encodeURIComponent(photoName)}`
       : null,
     maps_url: p.googleMapsUri ?? null,

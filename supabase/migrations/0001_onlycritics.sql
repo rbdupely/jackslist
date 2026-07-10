@@ -184,7 +184,10 @@ select
   i.id,
   m.verdict,
   m.score,
-  case when m.score is not null then m.score::text || '/10' end,
+  -- 9.0 -> "9/10", 8.5 -> "8.5/10" (score_original is the critic's own notation)
+  case when m.score is not null
+    then trim(trailing '.' from trim(trailing '0' from m.score::text)) || '/10'
+  end,
   case lower(coalesce(m.sentiment, ''))
     when 'positive' then 'positive'
     when 'mixed'    then 'mixed'

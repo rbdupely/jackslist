@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin";
 import { fetchEnrichment } from "@/lib/google";
-import type { Venue } from "@/lib/types";
+import { enrichmentPatch } from "@/lib/enrichment";
+import type { Item } from "@/lib/types";
 
-// Admin-only: refresh Google Places data for one venue (by slug).
+// Admin-only: refresh Google Places data for one item (by slug).
 export async function POST(request: NextRequest) {
   const sb = await createClient();
   const {
@@ -24,18 +25,18 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const { data: venue } = await admin
-    .from("venues")
-    .select("id,name,city,country")
+  const { data: item } = await admin
+    .from("items")
+    .select("id,name,city,country,external_ids,photo_url")
     .eq("slug", body.slug)
     .maybeSingle();
-  if (!venue) return Response.json({ ok: false, error: "not found" }, { status: 404 });
+  if (!item) return Response.json({ ok: false, error: "not found" }, { status: 404 });
 
-  const v = venue as Pick<Venue, "id" | "name" | "city" | "country">;
+  const v = item as Pick<Item, "id" | "name" | "city" | "country" | "external_ids" | "photo_url">;
   const fields = await fetchEnrichment(v, new Date().toISOString());
   if (!fields) return Response.json({ ok: false, error: "no Google match" }, { status: 200 });
 
-  const { error } = await admin.from("venues").update(fields).eq("id", v.id);
+  const { error } = await admin.from("items").update(enrichmentPatch(v, fields)).eq("id", v.id);
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
 
   return Response.json({ ok: true });

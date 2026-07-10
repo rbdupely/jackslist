@@ -1,4 +1,4 @@
-// Enrich venues with Google Places data (address, coords, rating, photo, map).
+// Enrich food items with Google Places data (address, coords, rating, photo, map).
 //
 //   node --env-file=.env.local scripts/enrich.ts            # only un-enriched
 //   node --env-file=.env.local scripts/enrich.ts --force    # re-enrich all
@@ -6,10 +6,11 @@
 //
 // Requires GOOGLE_MAPS_API_KEY + SUPABASE_SERVICE_ROLE_KEY. Caches results in
 // the DB so pages never call Google at request time. No-match => fields stay
-// null and the venue still renders.
+// null and the item still renders.
 
 import { createAdminClient } from "../lib/supabase/admin.ts";
 import { fetchEnrichment } from "../lib/google.ts";
+import { enrichmentPatch } from "../lib/enrichment.ts";
 
 const args = process.argv.slice(2);
 const force = args.includes("--force");
@@ -24,40 +25,39 @@ async function main() {
   }
   const sb = createAdminClient();
 
+  const { data: cat } = await sb.from("categories").select("id").eq("slug", "food").maybeSingle();
+  if (!cat) throw new Error("food category missing — run migration 0001 first");
+
   const { data, error } = await sb
-    .from("venues")
-    .select("id,name,slug,city,country,google_place_id")
-    .order("mention_count", { ascending: false });
+    .from("items")
+    .select("id,name,city,country,external_ids,photo_url")
+    .eq("category_id", (cat as { id: string }).id);
   if (error) throw new Error(error.message);
 
-  let venues = (data ?? []) as {
+  let items = (data ?? []) as {
     id: string;
     name: string;
-    slug: string;
     city: string | null;
     country: string | null;
-    google_place_id: string | null;
+    external_ids: Record<string, string> | null;
+    photo_url: string | null;
   }[];
 
-  if (!force) venues = venues.filter((v) => !v.google_place_id);
-  if (limit > 0) venues = venues.slice(0, limit);
+  if (!force) items = items.filter((v) => !v.external_ids?.google_place_id);
+  if (limit > 0) items = items.slice(0, limit);
 
-  console.log(`Enriching ${venues.length} venues${force ? " (force)" : ""}…`);
+  console.log(`Enriching ${items.length} items${force ? " (force)" : ""}…`);
 
   let matched = 0;
   let unmatched = 0;
-  for (const v of venues) {
+  for (const v of items) {
     try {
       const fields = await fetchEnrichment(v, new Date().toISOString());
       if (!fields) {
         unmatched++;
         console.log(`  ✗ no match: ${v.name}`);
       } else {
-        // Don't clobber an existing photo (e.g. the video-thumbnail fallback)
-        // when Google has no photo for this place.
-        const patch: Record<string, unknown> = { ...fields };
-        if (patch.google_photo_url == null) delete patch.google_photo_url;
-        const { error: upErr } = await sb.from("venues").update(patch).eq("id", v.id);
+        const { error: upErr } = await sb.from("items").update(enrichmentPatch(v, fields)).eq("id", v.id);
         if (upErr) throw upErr;
         matched++;
         console.log(`  ✓ ${v.name}`);

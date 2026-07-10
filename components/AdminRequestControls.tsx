@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { setRequestStatus, linkRequestVenue } from "@/app/admin/actions";
 import type { RequestRow } from "@/lib/types";
 
-const STATUSES: RequestRow["status"][] = ["Requested", "Planned", "Filmed"];
+const STATUSES: RequestRow["status"][] = ["Requested", "Planned", "Covered"];
 
 export function AdminRequestControls({ request }: { request: RequestRow }) {
   const [status, setStatus] = useState(request.status);
@@ -24,7 +24,7 @@ export function AdminRequestControls({ request }: { request: RequestRow }) {
     start(async () => {
       const res = await linkRequestVenue(request.id, slug);
       if (res.ok) {
-        setStatus("Filmed");
+        setStatus("Covered");
         setMsg("Linked");
       } else {
         setMsg(res.message ?? "Error");

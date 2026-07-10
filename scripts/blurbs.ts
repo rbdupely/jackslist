@@ -1,27 +1,24 @@
-// Generate Jack-voice blurbs for each venue from its mentions, via the
-// Anthropic API (no SDK — plain fetch).
+// Generate critic-voice blurbs for each item from its takes, via the Anthropic
+// API (no SDK — plain fetch). Written into items.metadata.blurb.
 //
-//   node --env-file=.env.local scripts/blurbs.ts             # all venues
+//   node --env-file=.env.local scripts/blurbs.ts             # all items
 //   node --env-file=.env.local scripts/blurbs.ts --limit 10  # test a few
 //
-// Requires ANTHROPIC_API_KEY + SUPABASE_SERVICE_ROLE_KEY. Without the Anthropic
-// key, the seeded fallback blurbs (top mention verdict) remain in place.
+// Requires ANTHROPIC_API_KEY + SUPABASE_SERVICE_ROLE_KEY.
 
 import { createAdminClient } from "../lib/supabase/admin.ts";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 
-const SYSTEM = `You write one-line blurbs for Jackslist, a food-discovery site built on the recommendations of the YouTube creator Jack (Jack's Dining Room).
+const SYSTEM = `You write one-line blurbs for OnlyCritics, a discovery site where every recommendation comes from a named individual critic rather than an aggregate score.
 
-Voice: punchy, confident, casual, hype but earned. Short declaratives. Superlative-driven but specific. Name the dish to get. Present tense. No corporate copy, no hedging. You may refer to "Jack" in the third person and use imperatives ("Get the...").
+Voice: punchy, confident, casual, hype but earned. Short declaratives. Superlative-driven but specific. Name the thing to get. Present tense. No corporate copy, no hedging.
 
 Rules:
 - 1–2 sentences, max ~240 characters.
 - Use ONLY facts present in the provided notes. Never invent dishes, awards, or claims.
-- If a must-order dish is given, name it.
-- Output ONLY the blurb text — no quotes, no preamble.
-
-Good example: "Jack's pick for the best pizza in New York. Get the cheese slice, then the chicken cutlet burrata sandwich — he'd put it on the iron throne."`;
+- If a must-order highlight is given, name it.
+- Output ONLY the blurb text — no quotes, no preamble.`;
 
 const args = process.argv.slice(2);
 const limitArg = args.indexOf("--limit");
@@ -29,38 +26,43 @@ const limit = limitArg >= 0 ? parseInt(args[limitArg + 1] ?? "0", 10) : 0;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type MentionLite = {
+type TakeLite = {
   verdict: string | null;
   superlatives: string | null;
-  dishes_called_out: string | null;
-  must_order: string | null;
+  highlights: string | null;
   score: number | null;
   best_of_language: boolean | null;
 };
 
-function buildNotes(
-  v: { name: string; category: string | null; cuisine_type: string | null; city: string | null; price_tier: string | null },
-  mentions: MentionLite[],
-): string {
+type ItemLite = {
+  id: string;
+  name: string;
+  subtype: string | null;
+  city: string | null;
+  price_tier: string | null;
+  metadata: Record<string, string> | null;
+};
+
+function buildNotes(v: ItemLite, takes: TakeLite[]): string {
   const lines = [
-    `Venue: ${v.name}`,
-    `Category: ${v.category ?? "—"}${v.cuisine_type ? ` (${v.cuisine_type})` : ""}`,
+    `Item: ${v.name}`,
+    `Type: ${v.subtype ?? "—"}${v.metadata?.cuisine ? ` (${v.metadata.cuisine})` : ""}`,
     `City: ${v.city ?? "—"}`,
     v.price_tier ? `Price: ${v.price_tier}` : "",
     "",
-    "Jack's mentions:",
+    "Critic's takes:",
   ];
-  for (const m of mentions.slice(0, 6)) {
+  for (const m of takes.slice(0, 6)) {
     const bits = [
       m.verdict,
-      m.must_order ? `Must order: ${m.must_order}` : m.dishes_called_out ? `Dishes: ${m.dishes_called_out}` : "",
+      m.highlights ? `Highlight: ${m.highlights}` : "",
       m.superlatives ? `Superlatives: ${m.superlatives}` : "",
       m.best_of_language ? "(called a best-of)" : "",
       m.score != null ? `[score ${m.score}/10]` : "",
     ].filter(Boolean);
     lines.push(`- ${bits.join(" — ")}`);
   }
-  return lines.filter((l) => l !== undefined).join("\n");
+  return lines.join("\n");
 }
 
 async function generateBlurb(notes: string): Promise<string | null> {
@@ -89,43 +91,37 @@ async function generateBlurb(notes: string): Promise<string | null> {
 
 async function main() {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error("ANTHROPIC_API_KEY not set — seeded fallback blurbs remain in place.");
+    throw new Error("ANTHROPIC_API_KEY not set — existing blurbs remain in place.");
   }
   const sb = createAdminClient();
 
-  const { data: venues, error } = await sb
-    .from("venues")
-    .select("id,name,category,cuisine_type,city,price_tier")
-    .order("mention_count", { ascending: false });
+  const { data: items, error } = await sb
+    .from("items")
+    .select("id,name,subtype,city,price_tier,metadata");
   if (error) throw new Error(error.message);
 
-  let list = (venues ?? []) as {
-    id: string;
-    name: string;
-    category: string | null;
-    cuisine_type: string | null;
-    city: string | null;
-    price_tier: string | null;
-  }[];
+  let list = (items ?? []) as ItemLite[];
   if (limit > 0) list = list.slice(0, limit);
 
-  console.log(`Generating blurbs for ${list.length} venues with ${MODEL}…`);
+  console.log(`Generating blurbs for ${list.length} items with ${MODEL}…`);
   let ok = 0;
   for (const v of list) {
-    const { data: mentions } = await sb
-      .from("mentions")
-      .select("verdict,superlatives,dishes_called_out,must_order,score,best_of_language")
-      .eq("venue_id", v.id)
+    const { data: takes } = await sb
+      .from("takes")
+      .select("verdict,superlatives,highlights,score,best_of_language")
+      .eq("item_id", v.id)
       .order("score", { ascending: false, nullsFirst: false });
 
-    const notes = buildNotes(v, (mentions ?? []) as MentionLite[]);
+    const notes = buildNotes(v, (takes ?? []) as TakeLite[]);
     const blurb = await generateBlurb(notes);
     if (blurb) {
-      await sb.from("venues").update({ jack_blurb: blurb }).eq("id", v.id);
+      // Merge, don't replace: metadata also carries cuisine.
+      const metadata = { ...(v.metadata ?? {}), blurb };
+      await sb.from("items").update({ metadata }).eq("id", v.id);
       ok++;
       console.log(`  ✓ ${v.name}: ${blurb.slice(0, 60)}…`);
     } else {
-      console.log(`  ✗ ${v.name} (kept fallback)`);
+      console.log(`  ✗ ${v.name} (kept existing)`);
     }
     await sleep(120);
   }
