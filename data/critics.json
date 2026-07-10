@@ -1,0 +1,67 @@
+{
+  "_comment": "Critic IDENTITIES only \u2014 public facts (name, platform, URL). No opinions/takes live here. seed-critic.ts creates a critic row from this the first time it ingests that critic's CSV of real, sourced takes. A critic with no CSV is never created (no empty critic pages).",
+  "dave-portnoy": {
+    "name": "Dave Portnoy",
+    "category": "food",
+    "platform": "One Bite / YouTube",
+    "source_url": "https://www.youtube.com/@stoolpresidente",
+    "score_style": "numeric",
+    "bio": "Barstool founder whose One Bite pizza reviews score every slice on a 0-10 scale."
+  },
+  "keith-lee": {
+    "name": "Keith Lee",
+    "category": "food",
+    "platform": "TikTok",
+    "source_url": "https://www.tiktok.com/@keith_lee125",
+    "score_style": "numeric",
+    "bio": "TikTok food critic known for scored, no-frills reviews and city food tours."
+  },
+  "jeremy-jahns": {
+    "name": "Jeremy Jahns",
+    "category": "movies",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@JeremyJahns",
+    "score_style": "numeric",
+    "bio": "Prolific YouTube movie reviewer with a signature tier scale from Awesometacular down."
+  },
+  "chris-stuckmann": {
+    "name": "Chris Stuckmann",
+    "category": "movies",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@ChrisStuckmann",
+    "score_style": "numeric",
+    "bio": "Letter-grade YouTube movie reviewer, now also a filmmaker."
+  },
+  "critical-drinker": {
+    "name": "The Critical Drinker",
+    "category": "movies",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@TheCriticalDrinker",
+    "score_style": "stance",
+    "bio": "Sharply opinionated YouTube movie critic; verdicts, not numeric scores."
+  },
+  "acg": {
+    "name": "ACG (Jeremy Penter)",
+    "category": "gaming",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@ACGreviews",
+    "score_style": "stance",
+    "bio": "Game reviewer whose verdicts are Buy, Wait for Sale, or Never Touch."
+  },
+  "skill-up": {
+    "name": "Skill Up (Ralph Panebianco)",
+    "category": "gaming",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@SkillUp",
+    "score_style": "stance",
+    "bio": "Weekly game reviews with explicit recommend / do-not-recommend verdicts."
+  },
+  "angryjoe": {
+    "name": "AngryJoe (Joe Vargas)",
+    "category": "gaming",
+    "platform": "YouTube",
+    "source_url": "https://www.youtube.com/@AngryJoeShow",
+    "score_style": "numeric",
+    "bio": "Long-running video game reviews scored out of 10."
+  }
+}
