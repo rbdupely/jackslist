@@ -91,6 +91,7 @@ export default async function Home() {
                     categorySlug={catBySlug.get(c.category_id) ?? "food"}
                     size={48}
                     ring
+                    priority
                   />
                 </Link>
               ))}

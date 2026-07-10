@@ -9,6 +9,7 @@ export function CriticAvatar({
   categorySlug,
   size = 44,
   ring = false,
+  priority = false,
   className = "",
 }: {
   name: string;
@@ -16,6 +17,7 @@ export function CriticAvatar({
   categorySlug: string;
   size?: number;
   ring?: boolean;
+  priority?: boolean;
   className?: string;
 }) {
   const ui = catUI(categorySlug);
@@ -40,6 +42,7 @@ export function CriticAvatar({
           alt={name}
           width={size}
           height={size}
+          priority={priority}
           className="relative h-full w-full object-cover"
         />
       </div>
