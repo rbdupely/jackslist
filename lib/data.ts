@@ -173,12 +173,104 @@ export async function getRelatedItems(item: ScoredItem, limit = 6): Promise<Scor
   return (data as ScoredItem[]) ?? [];
 }
 
-export async function getRequests(): Promise<RequestRow[]> {
+export async function getRequests(categorySlug?: string): Promise<RequestRow[]> {
   const sb = await createClient();
-  const { data } = await sb
-    .from("requests")
-    .select("*")
+  let q = sb.from("requests").select("*");
+  if (categorySlug) {
+    const cat = await getCategoryBySlug(categorySlug);
+    if (!cat) return [];
+    q = q.eq("category_id", cat.id);
+  }
+  const { data } = await q
     .order("upvotes", { ascending: false })
     .order("created_at", { ascending: false });
   return (data as RequestRow[]) ?? [];
+}
+
+// ---- Critics & categories -------------------------------------------------
+
+export type CategoryStat = Category & { itemCount: number; criticCount: number };
+
+export async function getCategoryStats(): Promise<CategoryStat[]> {
+  const sb = await createClient();
+  const cats = await getCategories();
+
+  const [{ data: items }, { data: critics }] = await Promise.all([
+    sb.from("items").select("category_id"),
+    sb.from("critics").select("category_id").eq("active", true),
+  ]);
+
+  const itemBy = new Map<string, number>();
+  for (const r of (items as { category_id: string }[]) ?? [])
+    itemBy.set(r.category_id, (itemBy.get(r.category_id) ?? 0) + 1);
+  const criticBy = new Map<string, number>();
+  for (const r of (critics as { category_id: string }[]) ?? [])
+    criticBy.set(r.category_id, (criticBy.get(r.category_id) ?? 0) + 1);
+
+  const ORDER = ["food", "stocks", "books", "gaming", "movies"];
+  return cats
+    .map((c) => ({
+      ...c,
+      itemCount: itemBy.get(c.id) ?? 0,
+      criticCount: criticBy.get(c.id) ?? 0,
+    }))
+    .sort((a, b) => ORDER.indexOf(a.slug) - ORDER.indexOf(b.slug));
+}
+
+export async function getAllCritics(): Promise<Critic[]> {
+  const sb = await createClient();
+  const { data } = await sb.from("critics").select("*").eq("active", true).order("name");
+  return (data as Critic[]) ?? [];
+}
+
+// A critic's catalog: every item they've covered, with their representative
+// take, ranked by their own score (or by how often they've covered it).
+export type CriticItem = { item: ScoredItem; score: number | null; stance: string | null };
+
+export async function getCriticCatalog(criticId: string): Promise<CriticItem[]> {
+  const sb = await createClient();
+  const { data: scores } = await sb
+    .from("critic_item_scores")
+    .select("item_id,score,stance")
+    .eq("critic_id", criticId);
+
+  const rows = (scores as { item_id: string; score: number | null; stance: string | null }[]) ?? [];
+  if (!rows.length) return [];
+
+  const { data: items } = await sb
+    .from("items_scored")
+    .select("*")
+    .in(
+      "id",
+      rows.map((r) => r.item_id),
+    );
+
+  const byId = new Map((items as ScoredItem[] ?? []).map((i) => [i.id, i]));
+  return rows
+    .map((r) => ({ item: byId.get(r.item_id)!, score: r.score, stance: r.stance }))
+    .filter((r) => r.item)
+    .sort(
+      (a, b) =>
+        (b.score ?? -1) - (a.score ?? -1) ||
+        b.item.take_count - a.item.take_count ||
+        a.item.name.localeCompare(b.item.name),
+    );
+}
+
+export async function getFollowedCriticIds(): Promise<Set<string>> {
+  const sb = await createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return new Set();
+  const { data } = await sb.from("follows").select("critic_id").eq("user_id", user.id);
+  return new Set(((data as { critic_id: string }[]) ?? []).map((r) => r.critic_id));
+}
+
+export async function getFollowedCritics(): Promise<Critic[]> {
+  const ids = await getFollowedCriticIds();
+  if (!ids.size) return [];
+  const sb = await createClient();
+  const { data } = await sb.from("critics").select("*").in("id", [...ids]);
+  return (data as Critic[]) ?? [];
 }

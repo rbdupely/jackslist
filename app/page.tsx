@@ -1,40 +1,54 @@
 import Link from "next/link";
-import { getAllItems, getCities, FOOD } from "@/lib/data";
-import { homeFeaturedLists, mostFeatured } from "@/lib/curate";
+import {
+  getAllCritics,
+  getAllItems,
+  getCategoryStats,
+  getCities,
+  getFollowedCriticIds,
+  FOOD,
+} from "@/lib/data";
+import { homeFeaturedLists } from "@/lib/curate";
 import { SearchBar } from "@/components/SearchBar";
 import { CuratedListCard } from "@/components/CuratedListCard";
-import { ItemCard } from "@/components/ItemCard";
+import { CriticCard } from "@/components/CriticCard";
 
-const EXAMPLES = [
-  "Best pizza in New York",
-  "Tokyo",
-  "Sandwiches in Florence",
-  "BBQ",
-  "Steakhouse in Las Vegas",
-];
+const EXAMPLES = ["Best pizza in New York", "Tokyo", "Sandwiches in Florence", "BBQ"];
+
+const TILE_COPY: Record<string, string> = {
+  food: "Not the Yelp average — the palate you trust.",
+  stocks: "Not an index fund — what they actually disclosed.",
+  books: "Not the Goodreads average — the reader you trust.",
+  gaming: "Not IGN — the reviewer.",
+  movies: "Not Rotten Tomatoes — the critic.",
+};
 
 export default async function Home() {
-  const items = await getAllItems(FOOD);
-  const lists = homeFeaturedLists(items);
-  const featured = mostFeatured(items, 8);
-  const cities = (await getCities()).slice(0, 16);
-  const itemCount = items.length;
-  const cityCount = new Set(items.map((v) => v.city).filter(Boolean)).size;
+  const [stats, critics, following, items, cities] = await Promise.all([
+    getCategoryStats(),
+    getAllCritics(),
+    getFollowedCriticIds(),
+    getAllItems(FOOD),
+    getCities(),
+  ]);
+
+  const lists = homeFeaturedLists(items).slice(0, 6);
+  const followed = critics.filter((c) => following.has(c.id));
+  const totalItems = stats.reduce((s, c) => s + c.itemCount, 0);
+  const catBySlug = new Map(stats.map((s) => [s.id, s.slug]));
 
   return (
     <div>
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-4 pb-10 pt-16 text-center sm:px-6 sm:pt-24">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-flame">
-          A Yelp for one palate
+          Follow the person, not the average
         </p>
         <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
-          Where Jack says <br className="hidden sm:block" />
-          to eat.
+          Taste has a name.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
-          Every place from <span className="font-medium text-ink">Jack&apos;s Dining Room</span> —
-          ranked, with his verdict and the dish to get. {itemCount} spots across {cityCount} cities.
+          Aggregate scores are noise. OnlyCritics tracks what specific, named people actually said
+          — with the receipt. {totalItems} picks from {critics.length} critics.
         </p>
 
         <div className="mx-auto mt-8 max-w-2xl">
@@ -54,12 +68,78 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Featured lists */}
+      {/* Categories */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Categories</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {stats.map((c) => (
+            <Link
+              key={c.id}
+              href={`/${c.slug}`}
+              className="group flex flex-col rounded-card border border-line bg-paper p-5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
+            >
+              <h3 className="font-display text-2xl font-semibold text-ink group-hover:text-flame">
+                {c.name}
+              </h3>
+              <p className="mt-1 text-sm text-ink-soft">{TILE_COPY[c.slug]}</p>
+              <p className="mt-4 text-sm font-medium text-ink-soft">
+                {c.criticCount > 0 ? (
+                  <>
+                    {c.criticCount} {c.criticCount === 1 ? "critic" : "critics"} ·{" "}
+                    {c.itemCount} {c.itemCount === 1 ? c.item_noun : `${c.item_noun}s`}
+                  </>
+                ) : (
+                  <span className="text-ink-soft/70">No critics seeded yet</span>
+                )}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Your critics */}
+      {followed.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Your critics</h2>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {followed.map((c) => (
+              <CriticCard
+                key={c.id}
+                critic={c}
+                categorySlug={catBySlug.get(c.category_id) ?? "food"}
+                following
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* All critics */}
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
-          <h2 className="font-display text-3xl font-semibold text-ink">Jack&apos;s lists</h2>
+          <h2 className="font-display text-3xl font-semibold text-ink">The critics</h2>
           <p className="hidden text-sm text-ink-soft sm:block">
-            Ranked by his score, then how often he goes back
+            Every take on this site traces back to one of them
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {critics.map((c) => (
+            <CriticCard
+              key={c.id}
+              critic={c}
+              categorySlug={catBySlug.get(c.category_id) ?? "food"}
+              following={following.has(c.id)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Featured lists (food) */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="mb-6 flex items-end justify-between">
+          <h2 className="font-display text-3xl font-semibold text-ink">Critics&apos; lists</h2>
+          <p className="hidden text-sm text-ink-soft sm:block">
+            Ranked by their score, then how often they go back
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -69,30 +149,11 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Most featured */}
-      {featured.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-          <div className="mb-6">
-            <h2 className="font-display text-3xl font-semibold text-ink">Most featured</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              The places Jack keeps coming back to.
-            </p>
-          </div>
-          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
-            {featured.map((v) => (
-              <div key={v.id} className="w-72 shrink-0 snap-start">
-                <ItemCard item={v} categorySlug={FOOD} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Cities */}
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <h2 className="mb-6 font-display text-3xl font-semibold text-ink">Browse by city</h2>
         <div className="flex flex-wrap gap-2.5">
-          {cities.map((c) => (
+          {cities.slice(0, 16).map((c) => (
             <Link
               key={c.slug}
               href={`/city/${c.slug}`}

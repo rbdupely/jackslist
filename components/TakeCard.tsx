@@ -21,11 +21,23 @@ function stanceLabel(s: string): string {
 }
 
 export function TakeCard({ take }: { take: TakeWithCritic }) {
-  const watchUrl = youtubeUrlWithTime(take.source_url, take.timestamp_sec);
   const thumb = youtubeThumb(take.source_url);
+  const isYouTube = !!thumb;
+  const watchUrl = isYouTube
+    ? youtubeUrlWithTime(take.source_url, take.timestamp_sec)
+    : take.source_url;
   const isShort = /short/i.test(take.source_platform ?? "");
   const timestampLabel = take.metadata?.timestamp_label;
   const critic = take.critic;
+
+  const platformLabel = isYouTube
+    ? isShort
+      ? "YouTube Short"
+      : "YouTube"
+    : take.source_platform;
+  const linkLabel = isYouTube
+    ? `Watch${timestampLabel ? ` at ${timestampLabel}` : ""}`
+    : "View source";
 
   return (
     <article className="flex flex-col gap-4 rounded-card border border-line bg-paper p-5 sm:flex-row">
@@ -74,9 +86,9 @@ export function TakeCard({ take }: { take: TakeWithCritic }) {
         )}
 
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          {take.source_platform && (
+          {platformLabel && (
             <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-semibold text-cream">
-              {isShort ? "YouTube Short" : "YouTube"}
+              {platformLabel}
             </span>
           )}
           {take.stance && (
@@ -100,11 +112,16 @@ export function TakeCard({ take }: { take: TakeWithCritic }) {
           )}
         </div>
 
-        {take.verdict && (
-          <blockquote className="font-display text-lg leading-snug text-ink">
-            “{take.verdict}”
-          </blockquote>
-        )}
+        {/* Only a spoken/written verdict is quoted. A filing-derived disclosure
+            is a statement of fact and must not be dressed up as a quotation. */}
+        {take.verdict &&
+          (isYouTube ? (
+            <blockquote className="font-display text-lg leading-snug text-ink">
+              “{take.verdict}”
+            </blockquote>
+          ) : (
+            <p className="font-display text-lg leading-snug text-ink">{take.verdict}</p>
+          ))}
 
         {take.highlights && (
           <p className="mt-3 text-sm">
@@ -122,7 +139,7 @@ export function TakeCard({ take }: { take: TakeWithCritic }) {
               rel="noreferrer"
               className="font-medium text-flame hover:underline"
             >
-              Watch{timestampLabel ? ` at ${timestampLabel}` : ""} ↗
+              {linkLabel} ↗
             </a>
           )}
         </div>

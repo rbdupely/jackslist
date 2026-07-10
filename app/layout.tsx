@@ -19,11 +19,11 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   metadataBase: new URL("https://jackslist.vercel.app"),
   title: {
-    default: "Jackslist — Every place Jack says to eat",
-    template: "%s · Jackslist",
+    default: "OnlyCritics — Follow the person, not the average",
+    template: "%s · OnlyCritics",
   },
   description:
-    "A Yelp for one palate. Every restaurant, bar, and hole-in-the-wall from Jack's Dining Room — ranked, city by city.",
+    "Aggregate scores are noise. OnlyCritics tracks what specific, named critics actually said — food, stocks, books, gaming, movies — with a link to the exact source.",
 };
 
 export default function RootLayout({

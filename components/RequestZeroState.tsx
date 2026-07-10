@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useEffect, useRef, useState } from "react";
 import { recordRequestAction, type RequestState } from "@/app/actions";
@@ -51,9 +52,9 @@ export function RequestZeroState({
             Couldn&apos;t save this request right now — try again shortly.
           </p>
         )}
-        <a href="/requests" className="text-sm font-medium text-flame hover:underline">
+        <Link href="/requests" className="text-sm font-medium text-flame hover:underline">
           See what else the community wants →
-        </a>
+        </Link>
       </div>
     </div>
   );
