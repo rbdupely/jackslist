@@ -21,7 +21,7 @@ const display = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://jackslist.vercel.app"),
+  metadataBase: new URL("https://onlycritics.vercel.app"),
   title: {
     default: "OnlyCritics — Follow the critic, not the crowd",
     template: "%s · OnlyCritics",
