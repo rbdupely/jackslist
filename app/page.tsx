@@ -12,6 +12,7 @@ import { CriticCard } from "@/components/CriticCard";
 import { AgreementCard } from "@/components/AgreementCard";
 import { CriticAvatar } from "@/components/CriticAvatar";
 import { TrustBand } from "@/components/TrustBand";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { catUI } from "@/lib/ui";
 
 const EXAMPLES = ["Best pizza in New York", "Alphabet", "Tokyo", "Apple", "Steakhouse in Las Vegas"];
@@ -121,7 +122,10 @@ export default async function Home() {
                 className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-surface p-4 shadow-e1 transition hover:-translate-y-1 hover:shadow-e3"
               >
                 <span className={`absolute inset-x-0 top-0 h-1 ${ui.bg}`} />
-                <span className={`overline ${ui.text}`}>{ui.label}</span>
+                <span className="flex items-center gap-1.5">
+                  <CategoryIcon slug={c.slug} size={16} />
+                  <span className={`overline ${ui.text}`}>{ui.label}</span>
+                </span>
                 <p className="mt-2 text-[13px] leading-snug text-muted">{TILE_COPY[c.slug]}</p>
                 <p className="tnum mt-6 text-sm font-semibold text-ink">
                   {live ? (

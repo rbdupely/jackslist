@@ -44,34 +44,8 @@ const CURATORS: Curator[] = [
     platform: "Book Club",
     bio: "Today show host whose Read with Jenna book club names a monthly pick that routinely tops bestseller lists.",
   },
-  {
-    slug: "pulitzer-fiction",
-    name: "The Pulitzer Prize for Fiction",
-    page: "Pulitzer Prize for Fiction",
-    platform: "Literary Prize",
-    bio: "American letters' most prestigious fiction award, given yearly since 1918 for distinguished fiction by an American author.",
-  },
-  {
-    slug: "booker-prize",
-    name: "The Booker Prize",
-    page: "Booker Prize",
-    platform: "Literary Prize",
-    bio: "The leading award for English-language literary fiction. A Booker win makes a novel — and its author's career.",
-  },
-  {
-    slug: "national-book-award-fiction",
-    name: "The National Book Award for Fiction",
-    page: "National Book Award for Fiction",
-    platform: "Literary Prize",
-    bio: "One of the US's premier literary honors, awarded annually since 1950.",
-  },
-  {
-    slug: "womens-prize-fiction",
-    name: "The Women's Prize for Fiction",
-    page: "Women's Prize for Fiction",
-    platform: "Literary Prize",
-    bio: "The UK's leading annual book award celebrating fiction written by women in English.",
-  },
+  // Only named humans are critics here. Literary prizes are institutions, not
+  // people, so they were removed.
 ];
 
 const JUNK_TITLES = new Set([
