@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getCategoryStats, getCities, searchItems, FOOD } from "@/lib/data";
+import { getCategoryStats, getCities, searchItems, searchCounts, FOOD } from "@/lib/data";
 import { parseQuery, type ParsedQuery } from "@/lib/curate";
 import { FOOD_SUBTYPES } from "@/lib/categories";
 import { SearchBar } from "@/components/SearchBar";
@@ -32,6 +32,10 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
 
   const stats = await getCategoryStats();
   const isFood = categorySlug === FOOD;
+
+  // Per-category hit counts drive the tabs as a real filter (only meaningful
+  // once the user has typed a query).
+  const counts = q ? await searchCounts(q) : null;
 
   // Only food has a city/subtype taxonomy to parse a natural-language query into.
   const cityNames = isFood ? (await getCities()).map((c) => c.city) : [];
@@ -81,28 +85,67 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
         <SearchBar variant="hero" defaultValue={q ?? ""} />
       </div>
 
-      {/* Category tabs — search is scoped to one category at a time. */}
+      {/* Category tabs — search is scoped to one category at a time; counts
+          show where the hits are so the tabs act as a real filter. */}
       <div className="mb-5 flex flex-wrap gap-2">
         {stats.map((c) => {
           const params = new URLSearchParams();
           if (q) params.set("q", q);
           if (c.slug !== FOOD) params.set("category", c.slug);
           const active = c.slug === categorySlug;
+          const n = counts?.[c.slug];
+          const empty = counts != null && n === 0;
           return (
             <Link
               key={c.id}
               href={`/search?${params.toString()}`}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition ${
                 active
                   ? "border-flame bg-flame text-white"
-                  : "border-line bg-paper text-ink-soft hover:border-ink/30 hover:text-ink"
+                  : empty
+                    ? "border-line bg-paper text-faint hover:text-ink-soft"
+                    : "border-line bg-paper text-ink-soft hover:border-ink/30 hover:text-ink"
               }`}
             >
               {c.name}
+              {n != null && (
+                <span
+                  className={`tnum text-xs ${
+                    active ? "text-white/80" : empty ? "text-faint" : "text-ink-soft/70"
+                  }`}
+                >
+                  {n}
+                </span>
+              )}
             </Link>
           );
         })}
       </div>
+
+      {/* If the active category is empty but others have hits, point there. */}
+      {counts && (counts[categorySlug] ?? 0) === 0 && stats.some((c) => (counts[c.slug] ?? 0) > 0) && (
+        <div className="mb-5 text-sm text-ink-soft">
+          No {isFood ? "spots" : "matches"} here — found in{" "}
+          {stats
+            .filter((c) => (counts[c.slug] ?? 0) > 0)
+            .map((c, i, arr) => {
+              const params = new URLSearchParams();
+              if (q) params.set("q", q);
+              if (c.slug !== FOOD) params.set("category", c.slug);
+              return (
+                <span key={c.id}>
+                  <Link
+                    href={`/search?${params.toString()}`}
+                    className="font-semibold text-flame hover:underline"
+                  >
+                    {c.name} ({counts[c.slug]})
+                  </Link>
+                  {i < arr.length - 1 ? ", " : ""}
+                </span>
+              );
+            })}
+        </div>
+      )}
 
       <div className="mb-6 flex flex-col gap-3">
         {isFood && <FilterBar cities={cityNames} subtypes={[...FOOD_SUBTYPES]} />}

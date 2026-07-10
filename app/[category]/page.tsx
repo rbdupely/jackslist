@@ -11,7 +11,7 @@ import {
 } from "@/lib/data";
 import { ItemCard } from "@/components/ItemCard";
 import { CriticCard } from "@/components/CriticCard";
-import { MapView, type MapPoint } from "@/components/map/MapView";
+import { MapExplorer, type MapPoint } from "@/components/map/MapExplorer";
 
 type Params = Promise<{ category: string }>;
 
@@ -79,17 +79,13 @@ export default async function CategoryPage({ params }: { params: Params }) {
         <>
           {points.length > 0 && (
             <section className="mb-12">
-              <div className="mb-4 flex items-baseline justify-between">
-                <h2 className="font-display text-2xl font-semibold text-ink">Explore the map</h2>
-                <span className="tnum text-sm text-ink-soft">
-                  {points.length.toLocaleString()} rated spots
-                </span>
-              </div>
-              <MapView
+              <h2 className="mb-4 font-display text-2xl font-semibold text-ink">Explore the map</h2>
+              <MapExplorer
                 points={points}
                 cluster
                 heightClass="h-[460px]"
                 className="rounded-card border border-line shadow-e1"
+                nounPlural={`${cat.item_noun}s`}
               />
               <p className="mt-2 text-xs text-ink-soft">
                 Every {cat.item_noun} a critic has rated, clustered — zoom in to a neighborhood,

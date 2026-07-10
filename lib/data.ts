@@ -117,6 +117,38 @@ export async function getMappableItems(categorySlug = FOOD): Promise<MapSpot[]> 
   return out;
 }
 
+// Per-category hit counts for a query, so the search tabs can show WHERE the
+// results are ("Books 3") and act as a real category filter. Uses head counts
+// with the same name/city/subtype match as searchItems.
+export async function searchCounts(q: string | undefined): Promise<Record<string, number>> {
+  const cats = await getCategories();
+  const sb = await createClient();
+  const term = q?.trim();
+  const like = term ? `%${term.replace(/[%,()]/g, " ")}%` : null;
+  const entries = await Promise.all(
+    cats.map(async (c) => {
+      let query = sb
+        .from("items_scored")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", c.id);
+      if (like) {
+        query = query.or(
+          [
+            `name.ilike.${like}`,
+            `city.ilike.${like}`,
+            `neighborhood.ilike.${like}`,
+            `subtype.ilike.${like}`,
+            `creator.ilike.${like}`,
+          ].join(","),
+        );
+      }
+      const { count } = await query;
+      return [c.slug, count ?? 0] as const;
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
 export async function getItemBySlug(
   categorySlug: string,
   slug: string,

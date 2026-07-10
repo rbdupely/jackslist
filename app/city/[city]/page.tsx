@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getItemsByCitySlug, FOOD } from "@/lib/data";
 import { ItemCard } from "@/components/ItemCard";
-import { MapView, type MapPoint } from "@/components/map/MapView";
+import { MapExplorer, type MapPoint } from "@/components/map/MapExplorer";
 import type { ScoredItem } from "@/lib/types";
 
 type Params = Promise<{ city: string }>;
@@ -63,14 +63,13 @@ export default async function CityPage({ params }: { params: Params }) {
 
       {points.length > 0 && (
         <section className="mb-12">
-          <MapView
+          <MapExplorer
             points={points}
             heightClass="h-[420px]"
             className="rounded-card border border-line shadow-e1"
           />
           <p className="mt-2 text-xs text-ink-soft">
-            {points.length} critic-rated{" "}
-            {points.length === 1 ? "spot" : "spots"} on the map · pins colored by top score
+            Pins colored by top score · click one for the verdict
           </p>
         </section>
       )}
