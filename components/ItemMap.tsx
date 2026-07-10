@@ -1,18 +1,11 @@
 import type { Item, GoogleHours } from "@/lib/types";
+import { MapView } from "@/components/map/MapView";
 
-// Google Maps embed when we have coordinates + an embed key. Degrades to an
-// address card + "Open in Maps" link otherwise, so the page is fully useful
-// before enrichment has run.
+// A real interactive map (Leaflet + free CARTO tiles, no API key) whenever we
+// have coordinates. Degrades to an address card + "Open in Maps" link
+// otherwise, so the page is fully useful even without coordinates.
 export function ItemMap({ item }: { item: Item }) {
-  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
-  const placeId = item.external_ids?.google_place_id;
   const hasCoords = item.lat != null && item.lng != null;
-
-  let embedSrc: string | null = null;
-  if (key && (placeId || hasCoords)) {
-    const q = placeId ? `place_id:${placeId}` : `${item.lat},${item.lng}`;
-    embedSrc = `https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(q)}&zoom=15`;
-  }
 
   const mapsUrl =
     item.maps_url ??
@@ -24,14 +17,20 @@ export function ItemMap({ item }: { item: Item }) {
 
   return (
     <div className="overflow-hidden rounded-card border border-line bg-paper">
-      {embedSrc ? (
-        <iframe
-          title={`Map of ${item.name}`}
-          src={embedSrc}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="aspect-[16/9] w-full border-0"
-          allowFullScreen
+      {hasCoords ? (
+        <MapView
+          heightClass="aspect-[16/9] w-full"
+          points={[
+            {
+              lat: item.lat as number,
+              lng: item.lng as number,
+              name: item.name,
+              href: mapsUrl,
+              score: null,
+              accent: "#ff3b2f",
+              meta: [item.neighborhood, item.city].filter(Boolean).join(", ") || null,
+            },
+          ]}
         />
       ) : (
         <div className="flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-stone-100 to-orange-100">
