@@ -4,18 +4,18 @@
 const PILLARS = [
   {
     k: "01",
-    t: "Named humans, not crowds",
-    d: "You follow a person with a track record — Buffett, Portnoy, Oprah — never an anonymous star-average.",
+    t: "Critics have names",
+    d: "Buffett. Portnoy. Oprah. You follow a person with a track record you can look up — and drop them the second they lose you.",
   },
   {
     k: "02",
-    t: "Every take has a receipt",
-    d: "Each score links straight to its source: the SEC filing, the video, the published list. Verify anything.",
+    t: "Everything links back",
+    d: "Every score points to where it came from: the filing, the video, the list. None of it is our opinion.",
   },
   {
     k: "03",
-    t: "No algorithm decides",
-    d: "We don't rank, weight, or blend opinions into mush. You choose who to trust — we just keep the receipts.",
+    t: "Nothing gets blended",
+    d: "No ranking model. No weighting. No mystery math. When two critics disagree, you see both and call it.",
   },
 ];
 
@@ -36,14 +36,10 @@ export function TrustBand({
   return (
     <section className="bg-ink text-white">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
-        <p className="overline text-flame">Trust as a service</p>
-        <h2 className="mt-3 max-w-2xl font-display text-3xl font-extrabold leading-tight sm:text-[2.75rem]">
-          Every verdict here comes with a receipt.
+        <p className="overline text-flame">No crowds. No algorithms.</p>
+        <h2 className="mt-3 max-w-3xl font-display text-3xl font-extrabold leading-tight sm:text-[2.75rem]">
+          Every verdict comes with a receipt.
         </h2>
-        <p className="mt-4 max-w-xl text-white/60">
-          The internet buried taste under anonymous averages and gamed algorithms. We did the
-          opposite — real experts, named, every opinion traceable to the source it came from.
-        </p>
 
         <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
           {PILLARS.map((p) => (
@@ -56,10 +52,9 @@ export function TrustBand({
         </div>
 
         <div className="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-white/10 pt-8">
-          <Stat value={stats.critics.toLocaleString()} label="critics you can name" />
-          <Stat value={stats.takes.toLocaleString()} label="sourced takes" />
+          <Stat value={stats.critics.toLocaleString()} label="critics" />
+          <Stat value={stats.takes.toLocaleString()} label="takes, all sourced" />
           <Stat value={stats.items.toLocaleString()} label="things rated" />
-          <Stat value="0" label="algorithms" />
         </div>
       </div>
     </section>
