@@ -12,6 +12,7 @@ import {
 import { ItemCard } from "@/components/ItemCard";
 import { CriticCard } from "@/components/CriticCard";
 import { MapExplorer, type MapPoint } from "@/components/map/MapExplorer";
+import { splitCritics } from "@/lib/critics";
 
 type Params = Promise<{ category: string }>;
 
@@ -45,6 +46,8 @@ export default async function CategoryPage({ params }: { params: Params }) {
     meta: [m.subtype, m.city].filter(Boolean).join(" · ") || null,
   }));
 
+  const { people, awards } = splitCritics(critics);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <header className="mb-10">
@@ -53,7 +56,8 @@ export default async function CategoryPage({ params }: { params: Params }) {
         </p>
         <h1 className="mt-2 font-display text-5xl font-semibold text-ink">{cat.name}</h1>
         <p className="mt-2 text-ink-soft">
-          {critics.length} {critics.length === 1 ? "critic" : "critics"} ·{" "}
+          {people.length} {people.length === 1 ? "critic" : "critics"}
+          {awards.length > 0 && ` · ${awards.length} award${awards.length === 1 ? "" : "s"} & guides`} ·{" "}
           {itemTotal.toLocaleString()}{" "}
           {itemTotal === 1 ? cat.item_noun : `${cat.item_noun}s`} covered
         </p>
@@ -94,19 +98,40 @@ export default async function CategoryPage({ params }: { params: Params }) {
             </section>
           )}
 
-          <section className="mb-12">
-            <h2 className="mb-4 font-display text-2xl font-semibold text-ink">The critics</h2>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {critics.map((c) => (
-                <CriticCard
-                  key={c.id}
-                  critic={c}
-                  categorySlug={cat.slug}
-                  following={following.has(c.id)}
-                />
-              ))}
-            </div>
-          </section>
+          {people.length > 0 && (
+            <section className="mb-12">
+              <h2 className="mb-4 font-display text-2xl font-semibold text-ink">The critics</h2>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {people.map((c) => (
+                  <CriticCard
+                    key={c.id}
+                    critic={c}
+                    categorySlug={cat.slug}
+                    following={following.has(c.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {awards.length > 0 && (
+            <section className="mb-12">
+              <h2 className="mb-1 font-display text-2xl font-semibold text-ink">Awards &amp; Guides</h2>
+              <p className="mb-4 text-sm text-ink-soft">
+                Institutions, not individuals — tracked separately from the critics you follow.
+              </p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {awards.map((c) => (
+                  <CriticCard
+                    key={c.id}
+                    critic={c}
+                    categorySlug={cat.slug}
+                    following={following.has(c.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           <section>
             <div className="mb-4 flex items-end justify-between">

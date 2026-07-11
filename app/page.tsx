@@ -13,6 +13,7 @@ import { AgreementCard } from "@/components/AgreementCard";
 import { CriticAvatar } from "@/components/CriticAvatar";
 import { TrustBand } from "@/components/TrustBand";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { splitCritics } from "@/lib/critics";
 import { catUI } from "@/lib/ui";
 
 const EXAMPLES = ["Best pizza in New York", "Alphabet", "Tokyo", "Apple", "Steakhouse in Las Vegas"];
@@ -50,10 +51,12 @@ export default async function Home() {
   ]);
 
   const catBySlug = new Map(stats.map((s) => [s.id, s.slug]));
-  const followed = critics.filter((c) => following.has(c.id));
+  // Critics are named humans; awards & guides are their own lane.
+  const { people, awards } = splitCritics(critics);
+  const followed = people.filter((c) => following.has(c.id));
 
   // Faces first for the hero wall.
-  const wall = [...critics].sort((a, b) => (a.avatar_url ? 0 : 1) - (b.avatar_url ? 0 : 1));
+  const wall = [...people].sort((a, b) => (a.avatar_url ? 0 : 1) - (b.avatar_url ? 0 : 1));
 
   return (
     <div>
@@ -217,7 +220,7 @@ export default async function Home() {
             </h2>
           </div>
           <div className="flex flex-col gap-3">
-            {(followed.length > 0 ? followed : critics.slice(0, 6)).map((c) => (
+            {(followed.length > 0 ? followed : people.slice(0, 6)).map((c) => (
               <CriticCard
                 key={c.id}
                 critic={c}
@@ -238,7 +241,7 @@ export default async function Home() {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {critics.map((c) => (
+          {people.map((c) => (
             <CriticCard
               key={c.id}
               critic={c}
@@ -248,6 +251,31 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      {/* Awards & Guides — institutions, kept separate from the human critics. */}
+      {awards.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <div className="mb-5">
+            <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+              Awards &amp; Guides
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Not people — institutions. The Michelin stars, the prize committees. Prestigious, and
+              worth tracking, but a separate thing from following a critic.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {awards.map((c) => (
+              <CriticCard
+                key={c.id}
+                critic={c}
+                categorySlug={catBySlug.get(c.category_id) ?? "food"}
+                following={following.has(c.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

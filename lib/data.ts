@@ -14,6 +14,7 @@ import type {
   TakeWithCritic,
 } from "@/lib/types";
 import { citySlug } from "@/lib/util";
+import { isAward } from "@/lib/critics";
 
 export const FOOD = "food";
 
@@ -273,7 +274,11 @@ export async function getRequests(categorySlug?: string): Promise<RequestRow[]> 
 
 // ---- Critics & categories -------------------------------------------------
 
-export type CategoryStat = Category & { itemCount: number; criticCount: number };
+export type CategoryStat = Category & {
+  itemCount: number;
+  criticCount: number; // named humans only
+  awardCount: number; // awards & guides
+};
 
 export async function getCategoryStats(): Promise<CategoryStat[]> {
   const sb = await createClient();
@@ -291,13 +296,16 @@ export async function getCategoryStats(): Promise<CategoryStat[]> {
         return [c.id, count ?? 0] as const;
       }),
     ),
-    sb.from("critics").select("category_id").eq("active", true),
+    sb.from("critics").select("category_id,platform").eq("active", true),
   ]);
 
   const itemBy = new Map<string, number>(itemCounts);
   const criticBy = new Map<string, number>();
-  for (const r of (critics as { category_id: string }[]) ?? [])
-    criticBy.set(r.category_id, (criticBy.get(r.category_id) ?? 0) + 1);
+  const awardBy = new Map<string, number>();
+  for (const r of (critics as { category_id: string; platform: string | null }[]) ?? []) {
+    const bucket = isAward(r) ? awardBy : criticBy;
+    bucket.set(r.category_id, (bucket.get(r.category_id) ?? 0) + 1);
+  }
 
   const ORDER = ["food", "stocks", "books", "gaming", "movies"];
   return cats
@@ -305,6 +313,7 @@ export async function getCategoryStats(): Promise<CategoryStat[]> {
       ...c,
       itemCount: itemBy.get(c.id) ?? 0,
       criticCount: criticBy.get(c.id) ?? 0,
+      awardCount: awardBy.get(c.id) ?? 0,
     }))
     .sort((a, b) => ORDER.indexOf(a.slug) - ORDER.indexOf(b.slug));
 }
@@ -443,18 +452,24 @@ export async function getRecentTakes(limit = 9): Promise<(RecentTake & { categor
     .map((t) => ({ ...t, categorySlug: byId.get(t.item.category_id) ?? "food" }));
 }
 
-export type OverviewStat = { critics: number; takes: number; items: number; liveCategories: number };
+export type OverviewStat = {
+  critics: number; // named humans only
+  awards: number;
+  takes: number;
+  items: number;
+  liveCategories: number;
+};
 
 export async function getOverview(): Promise<OverviewStat> {
   const sb = await createClient();
-  const [c, t, i] = await Promise.all([
-    sb.from("critics").select("*", { count: "exact", head: true }).eq("active", true),
+  const [t, i] = await Promise.all([
     sb.from("takes").select("*", { count: "exact", head: true }),
     sb.from("items").select("*", { count: "exact", head: true }),
   ]);
   const stats = await getCategoryStats();
   return {
-    critics: c.count ?? 0,
+    critics: stats.reduce((a, s) => a + s.criticCount, 0),
+    awards: stats.reduce((a, s) => a + s.awardCount, 0),
     takes: t.count ?? 0,
     items: i.count ?? 0,
     liveCategories: stats.filter((s) => s.criticCount > 0).length,
